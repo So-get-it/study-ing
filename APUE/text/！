@@ -1,0 +1,35 @@
+#include <stdio.h>
+
+typedef struct node_s
+{
+	int           data;
+	struct node_s *next;
+}node_t;
+
+int main(int argc, char *argv[])
+{
+	node_t *head = NULL;
+	node_t *new_node;
+	node_t *tail;
+	int    i;
+
+	for(i=0; i<10; i++)
+	{
+		new_node = malloc(sizeof(node_t);
+		node_t.data = i;
+		printf("%d",node_t.data);
+
+		if(head == NULL)
+		{
+			head = new_node;
+		}
+		else
+		{
+			tail = new_node;
+		}
+		tail = new_node;		
+	}
+}
+
+
+
