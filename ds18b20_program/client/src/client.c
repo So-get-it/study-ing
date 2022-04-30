@@ -13,11 +13,22 @@
 
 #include "client.h"
 
-int s_stop = 0;
+int run_stop = 0;
 
 void sig_stop(int signum)
 {
-	s_stop = 1;
+	printf("catch the signal: %d\n", signum);
+	run_stop = 1;
+}
+
+static int callback(void *NotUsed, int argc, char **argv, char **azColName)
+{
+   int i;
+   for(i=0; i<argc; i++){
+      printf("%s = %s\n", azColName[i], argv[i] ? argv[i] : "NULL");
+   }
+   printf("\n");
+   return 0;
 }
 
 int main(int argc, char *argv[])
@@ -29,15 +40,16 @@ int main(int argc, char *argv[])
 	int 					background = 0;
 	int                     ch;
 	int 					time;
+	char 					*sql;
 	char 					str[32];
 	char 					d_buf[32];
 	char 			 		t_buf[32];
 	char                    *IP = NULL;
 	char                    **pIP = NULL;
 	char 					*domain = NULL;
-	struct  sockaddr_in     serv_addr;
 	char                    buf[1024];
 	char 					msg_buf[128];
+	struct  sockaddr_in     serv_addr;
 	struct hostent          *host = NULL;  //定义hostent结构体
 	struct _temp_msg 		msg;
 	struct _get_d_time 		dt;
@@ -76,6 +88,7 @@ int main(int argc, char *argv[])
 
 	signal(SIGINT, sig_stop);
 	signal(SIGTERM, sig_stop);
+	signal(SIGPIPE, SIG_IGN);
 
 	if(!port | !(!IP ^ !domain))
 	{
@@ -108,74 +121,48 @@ int main(int argc, char *argv[])
 	{
 		daemon(0, 0);
 	}
+	
 
-	client_fd = socket(AF_INET, SOCK_STREAM, 0);
-	if(client_fd < 0)
-	{
-		printf("create client socket failure:%s\n", strerror(errno));
-		return -1;
-	}
-	printf("create client socket[fd:%d] scuess\n",client_fd);
+	client_fd = socket_client_init(IP, port);
+	printf("connect server socket success: fd[%d]\n", client_fd);
+	sqlite_create_table();	//创建表
 
-	memset(&serv_addr, 0, sizeof(serv_addr));
-	serv_addr.sin_family = AF_INET;
-	serv_addr.sin_port   = htons(port);
-	inet_aton(IP, &serv_addr.sin_addr);
-/*
-	if(connect(client_fd, (struct sockaddr *)&serv_addr, sizeof(serv_addr)) < 0)
-	{
-		printf("connect server [%s:%d] failure:%s\n",IP, port, strerror(errno));
-		close(client_fd);
-		return -1;
-		//client_fd = re_connect(IP, port);
-	}
-	printf("connect server [%s:%d][client_fd:%d] scuess!\n",IP, port, client_fd);
-*/
-	while(!s_stop)
+	while(!run_stop)
 	{
 		get_temp_and_serialnum(&msg);
-//		printf("1\n");
-
 		get_date_time(&dt);
-//		printf("2\n");
-		
 
 		snprintf(msg_buf, sizeof(msg_buf), "Serial number: %s ===Date-Time: %s/%s ===Temperature: %.2f℃", msg.serial_num, dt.date, dt.time, msg.temp);
-/*
-		if(connect(client_fd, (struct sockaddr *)&serv_addr, sizeof(serv_addr)) < 0)
-		{
-			printf("connect server [%s:%d] failure:%s\n",IP, port, strerror(errno));
-			close(client_fd);
-			return -1;
-			//client_fd = re_connect(IP, port);
-		}
-		printf("connect server [%s:%d][client_fd:%d] scuess!\n",IP, port, client_fd);
-*/
-		printf("running %d times...\n", i);
+		
+		printf("running the %d time...\n", i);
 		i++;
-		client_fd = socket_client_init(IP, port);
+
+		if(i != 2)
+		{
+			if(rv <= 0)
+			{
+				client_fd = socket_client_init(IP, port);
+				printf("connect server socket: fd[%d]\n", client_fd);
+			}
+		}
 		rv = write(client_fd, msg_buf, strlen(msg_buf));
-//		printf("rv return: %d\n", rv);
+		
 		if(rv < 0)
 		{
 			printf("write failure:%s\n",strerror(errno));
 			close(client_fd);
+//			sqlite_insert1();
+			sqlite_insert(msg.serial_num, dt.date, dt.time, msg.temp);
 		}
-/*
-		memset(buf, 0, sizeof(buf));
-		if((rv = read(client_fd, buf, sizeof(buf))) < 0)
+		else
 		{
-			printf("write failure:%s\n",strerror(errno));
-			close(client_fd);
+			printf("write %d bytes data success: %d\n", rv);
 		}
-		else if(rv == 0)
+		
+		if(1 == run_stop)
 		{
-			printf("client connect to server get disconnectd\n");
-			close(client_fd);
+			sqlite_drop_table();	//删除表
 		}
-		printf("read %d bytes data from server and echo it back:%s\n",rv, buf);
-*/
-		close(client_fd);
 		sleep(time);
 	}
 

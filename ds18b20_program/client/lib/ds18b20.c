@@ -28,7 +28,8 @@ void get_temp_and_serialnum(temp_msg *packet)
 		printf("open directary %s failure:%s", path, strerror(errno));
 		//return -1;
 	}
-
+	
+	memset(msg->serial_num, 0, 32);
 	while(NULL != (direntp = readdir(dirp)))
 	{
 		if( strstr(direntp->d_name,"28-"))

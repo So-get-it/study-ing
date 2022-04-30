@@ -30,6 +30,7 @@
 #include <netdb.h>
 #include <dirent.h>
 #include <fcntl.h>
+#include <sqlite3.h>
 
 #endif
 
@@ -73,5 +74,11 @@ extern int socket_client_init(char *IP, int port);
 extern int re_connect(char *IP, int port);
 
 extern void error_check(int fd, int cmp, char *str);
+
+extern void sqlite_create_table();
+extern void sqlite_drop_table();
+extern void sqlite_insert(char *serial_num, char *date, char *time, float temp);
+extern void sqlite_insert1();
+extern void sqlite_delete();
 #endif
 

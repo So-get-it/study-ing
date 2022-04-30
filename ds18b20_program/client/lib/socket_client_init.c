@@ -17,37 +17,28 @@
 
 int socket_client_init (char *IP, int port)
 {
-	int 			rv = 0;
-	static int 		fd = -1;
+	int 					rv = 0;
+	int 					fd = -1;
 	struct  sockaddr_in     serv_addr;
 
-    while( !rv )
+	fd = socket(AF_INET, SOCK_STREAM, 0);
+	if(fd < 0)
 	{
-		fd = socket(AF_INET, SOCK_STREAM, 0);
-		if(fd < 0)
-		{
-			printf("create client socket failure:%s\n", strerror(errno));
-			return -1;
-		}
-		printf("create client socket[fd:%d] scuess\n",fd);
-
-		memset(&serv_addr, 0, sizeof(serv_addr));
-		serv_addr.sin_family = AF_INET;
-		serv_addr.sin_port   = htons(port);
-		inet_aton(IP, &serv_addr.sin_addr);
-
-		printf("Try to connect again...\n");
-		fd = socket_client_init(IP, port);
-		rv = connect(fd, (struct sockaddr *)&serv_addr, sizeof(serv_addr));
-		
-		error_check(rv, 0, "connect");
-
-		if(rv < 0)
-		{
-			sleep(10);
-		}
-		rv = rv + 1;
+		printf("create client socket failure:%s\n", strerror(errno));
+		return -1;
 	}
+	printf("create client socket[fd:%d] scuess\n",fd);
+
+	memset(&serv_addr, 0, sizeof(serv_addr));
+	serv_addr.sin_family = AF_INET;
+	serv_addr.sin_port   = htons(port);
+	inet_aton(IP, &serv_addr.sin_addr);
+
+	rv = connect(fd, (struct sockaddr *)&serv_addr, sizeof(serv_addr));
+	error_check(rv, 0, "connect");
+
+//	rv = rv + 1;
+
 	return fd;
 } 
 

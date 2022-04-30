@@ -150,7 +150,7 @@ int main(int argc, char *argv[])
 					continue;
 				}
 
-				printf("read %d bytes data from client: %s\n", rv, buf);
+				printf("read %d bytes data from client:\n%s\n", rv, buf);
 /* 
 				for(j = 0; j < rv; j++)
 				{
