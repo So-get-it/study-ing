@@ -49,7 +49,7 @@ int main()
 			printf( "第 %d 条记录\n", i+1 );
 			for( j = 0 ; j < nColumn; j++ )
 			{
-				printf( "values:%s\n",  dbResult[j], dbResult [index] );
+				printf( "values:%s\n", dbResult [index] );
 				++index; // dbResult 的字段值是连续的，从第0索引到第 nColumn - 1索引都是字段名称，从第 nColumn 索引开始，后面都是字段值，它把一个二维的表（传统的行列表示法）用一个扁平的形式来表示
 			}
 			printf( "-------\n" );

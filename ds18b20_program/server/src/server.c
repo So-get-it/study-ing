@@ -77,6 +77,7 @@ int main(int argc, char *argv[])
     {
     	daemon(0, 0);
     }
+	openlog("ds18b20_server", LOG_CONS | LOG_PID, 0);
 
 	signal(SIGINT, sig_stop);
     signal(SIGTERM, sig_stop);
@@ -109,7 +110,6 @@ int main(int argc, char *argv[])
 		return -2;
 	}
 	
-	sqlite_drop_table();
 	sqlite_create_table();
 	while(!run_stop)
 	{
@@ -140,6 +140,7 @@ int main(int argc, char *argv[])
 					continue;
 				}
 
+				syslog(LOG_NOTICE, "Program '%s' accept a new client OK!\n", __FILE__);
 				printf("client_fd: %d\n", client_fd);
 				event.data.fd = client_fd;
 				event.events = EPOLLIN|EPOLLET;
@@ -167,12 +168,16 @@ int main(int argc, char *argv[])
 				}
 
 				printf("receive %d bytes data from client:\n%s\n", rv, buf);
+				syslog(LOG_NOTICE, "Program '%s' receive some message from client OK!\n", __FILE__);
 				printf("start to get memsage...\n");
 				data_analysis(buf, &msg, &dt);
 				sqlite_insert(msg.serial_num, dt.date, dt.time, msg.temp);
 			}
 		}
 	}
+	syslog(LOG_NOTICE, "Program '%s' stop running\n", __FILE__);
+    closelog();
+
 cleanup:
 	close(listen_fd);
 

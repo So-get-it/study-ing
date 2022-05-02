@@ -20,7 +20,7 @@ void print_usage(char *program)
         printf("-p(--port): sepcify server port\n");
         printf("-t(--time): dwell time in second\n");
         printf("-d(--domain): sepcify server domain\n");
-        printf("-b(--port): without arguments\n");
+        printf("-b(--daemon): without arguments\n");
 }
 
 

@@ -113,7 +113,7 @@ int main(int argc, char *argv[])
 	{
 		daemon(0, 0);
 	}
-	
+	openlog("ds18b20_client", LOG_CONS | LOG_PID, 0);
 
 	client_fd = socket_client_init(IP, port);
 	printf("connect server socket success: fd[%d]\n", client_fd);
@@ -138,6 +138,7 @@ int main(int argc, char *argv[])
 				if(client_fd > 0)
 				{
 					write_sql_table_values(client_fd);
+					syslog(LOG_NOTICE, "Program '%s' reconnect success,write the table to server OK!\n", __FILE__);
 					sqlite_delete();	//写完删除表数据
 				}
 //				printf("connect server socket: fd[%d]\n", client_fd);
@@ -153,17 +154,21 @@ int main(int argc, char *argv[])
 		if(rv < 0 | rc < 0)
 		{
 			printf("write failure:%s\n",strerror(errno));
+			syslog(LOG_WARNING, "Program '%s' maybe disconnected, insert the message into the table and try to reconnect...\n", __FILE__);
 			close(client_fd);
 			sqlite_insert(msg.serial_num, dt.date, dt.time, msg.temp);
 		}
 		else
 		{
 			printf("write %d bytes data success: %d\n", rv);
+			syslog(LOG_NOTICE, "Program '%s' write the message to server OK!\n", __FILE__);
 		}
 		
 		sleep(time);
 	}
 	sqlite_drop_table();
+	syslog(LOG_NOTICE, "Program '%s' stop running\n", __FILE__);
+	closelog();
 
 }
 
