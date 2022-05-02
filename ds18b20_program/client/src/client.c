@@ -21,21 +21,13 @@ void sig_stop(int signum)
 	run_stop = 1;
 }
 
-static int callback(void *NotUsed, int argc, char **argv, char **azColName)
-{
-   int i;
-   for(i=0; i<argc; i++){
-      printf("%s = %s\n", azColName[i], argv[i] ? argv[i] : "NULL");
-   }
-   printf("\n");
-   return 0;
-}
 
 int main(int argc, char *argv[])
 {
 	int 					i = 1;
 	int                     client_fd = -1;
 	int                     rv = -1;
+	int 					rc = -1;
 	int                     port = 0;
 	int 					background = 0;
 	int                     ch;
@@ -43,7 +35,7 @@ int main(int argc, char *argv[])
 	char 					*sql;
 	char 					str[32];
 	char 					d_buf[32];
-	char 			 		t_buf[32];
+	char 			 		t_buf[8];
 	char                    *IP = NULL;
 	char                    **pIP = NULL;
 	char 					*domain = NULL;
@@ -132,6 +124,7 @@ int main(int argc, char *argv[])
 		get_temp_and_serialnum(&msg);
 		get_date_time(&dt);
 
+		memset(msg_buf, 0, sizeof(msg_buf));
 		snprintf(msg_buf, sizeof(msg_buf), "Serial number: %s ===Date-Time: %s/%s ===Temperature: %.2f℃", msg.serial_num, dt.date, dt.time, msg.temp);
 		
 		printf("running the %d time...\n", i);
@@ -142,16 +135,25 @@ int main(int argc, char *argv[])
 			if(rv <= 0)
 			{
 				client_fd = socket_client_init(IP, port);
-				printf("connect server socket: fd[%d]\n", client_fd);
+				if(client_fd > 0)
+				{
+					write_sql_table_values(client_fd);
+					sqlite_delete();	//写完删除表数据
+				}
+//				printf("connect server socket: fd[%d]\n", client_fd);
 			}
 		}
+
+		write(client_fd, "yeah", 5);
+		memset(t_buf, 0, sizeof(t_buf));
+		rc = recv(client_fd, t_buf, 8, 0);
 		rv = write(client_fd, msg_buf, strlen(msg_buf));
+//		rv = send(client_fd, msg_buf, strlen(msg_buf), 0);
 		
-		if(rv < 0)
+		if(rv < 0 | rc < 0)
 		{
 			printf("write failure:%s\n",strerror(errno));
 			close(client_fd);
-//			sqlite_insert1();
 			sqlite_insert(msg.serial_num, dt.date, dt.time, msg.temp);
 		}
 		else
@@ -159,12 +161,9 @@ int main(int argc, char *argv[])
 			printf("write %d bytes data success: %d\n", rv);
 		}
 		
-		if(1 == run_stop)
-		{
-			sqlite_drop_table();	//删除表
-		}
 		sleep(time);
 	}
+	sqlite_drop_table();
 
 }
 

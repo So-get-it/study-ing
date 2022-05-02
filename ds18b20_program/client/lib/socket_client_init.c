@@ -37,6 +37,10 @@ int socket_client_init (char *IP, int port)
 	rv = connect(fd, (struct sockaddr *)&serv_addr, sizeof(serv_addr));
 	error_check(rv, 0, "connect");
 
+	if(rv < 0)
+	{
+		fd = -1;
+	}
 //	rv = rv + 1;
 
 	return fd;

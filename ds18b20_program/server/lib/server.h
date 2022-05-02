@@ -26,23 +26,26 @@
 #include <signal.h>
 #include <errno.h>
 #include <syslog.h>
+#include <ctype.h>
 #include <libgen.h>
 #include <netdb.h>
 #include <dirent.h>
 #include <fcntl.h>
 #include <sqlite3.h>
+#include <sys/epoll.h>
+
+#define ARRAY_SIZE(x)   (sizeof(x)/sizeof(x[0]))
+#define MAX_EVENTS      1024
 
 #endif
-
-
 
 #ifndef _TEMP_H_
 #define _TEMP_H_
 
 typedef struct _temp_msg
 {
-	char    serial_num[32];
-	float   temp;
+        char    serial_num[32];
+        float   temp;
 }temp_msg;
 
 #endif
@@ -52,34 +55,30 @@ typedef struct _temp_msg
 
 typedef struct _get_d_time
 {
-	char 	date[32];
-	char 	time[32];
+        char    date[32];
+        char    time[32];
 }get_d_time;
 
 #endif
 
 
 
-#ifndef _CLIENT_H_
-#define _CLIENT_H_
+#ifndef _SERVER_H_
+#define _SERVER_H_
 
-extern void get_temp_and_serialnum(temp_msg *packet);
-
-extern void get_date_time(get_d_time *dt);
 
 extern void sig_stop(int signum);
 extern void print_usage(char *program);
+extern void data_analysis(char *data, temp_msg *msg, get_d_time *dt);
 
-extern int socket_client_init(char *IP, int port);
-extern int re_connect(char *IP, int port);
+extern int socket_server_init(char *IP, int port);
 
 extern void error_check(int fd, int cmp, char *str);
 
 extern void sqlite_create_table();
 extern void sqlite_drop_table();
 extern void sqlite_insert(char *serial_num, char *date, char *time, float temp);
-extern void sqlite_insert1();
 extern void sqlite_delete();
-extern void write_sql_table_values(int fd);
+
 #endif
 
