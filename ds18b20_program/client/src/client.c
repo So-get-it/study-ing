@@ -111,7 +111,11 @@ int main(int argc, char *argv[])
 
 	if(1 == background)	//后台运行
 	{
-		daemon(0, 0);
+		if(daemon(0, 0) < 0)
+		{
+			printf("daemon() failure: %s\n", strerror(errno));
+			return -1;
+		}
 	}
 	openlog("ds18b20_client", LOG_CONS | LOG_PID, 0);
 
