@@ -47,9 +47,9 @@ int main(int argc, char *argv[])
 	struct epoll_event      event_array[MAX_EVENTS];
 
 	struct option           opts[] = {
-		{"daemon", required_argument, NULL, 'b'},
+		{"daemon", no_argument, NULL, 'b'},
 		{"port", required_argument, NULL, 'p'},
-		{"help", required_argument, NULL, 'h'},
+		{"help", no_argument, NULL, 'h'},
 		{NULL, 0, NULL, 0}
 	};
 

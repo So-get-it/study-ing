@@ -78,6 +78,16 @@ int main(int argc, char *argv[])
 		}
 	}
 
+	if(1 == background)	//后台运行
+	{
+		if(daemon(0, 0) < 0)
+		{
+			printf("daemon() failure: %s\n", strerror(errno));
+			return -1;
+		}
+	}
+	openlog("ds18b20_client", LOG_CONS | LOG_PID, 0);
+
 	signal(SIGINT, sig_stop);
 	signal(SIGTERM, sig_stop);
 	signal(SIGPIPE, SIG_IGN);
@@ -109,15 +119,6 @@ int main(int argc, char *argv[])
 		}
 	}
 
-	if(1 == background)	//后台运行
-	{
-		if(daemon(0, 0) < 0)
-		{
-			printf("daemon() failure: %s\n", strerror(errno));
-			return -1;
-		}
-	}
-	openlog("ds18b20_client", LOG_CONS | LOG_PID, 0);
 
 	client_fd = socket_client_init(IP, port);
 	printf("connect server socket success: fd[%d]\n", client_fd);
