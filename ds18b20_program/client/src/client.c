@@ -26,7 +26,7 @@ int main(int argc, char *argv[])
 {
 	int 					i = 1;
 	int                     client_fd = -1;
-	int                     rv = -1;
+	int                     rv = 1;
 	int 					rc = -1;
 	int                     port = 0;
 	int 					background = 0;
@@ -80,13 +80,14 @@ int main(int argc, char *argv[])
 
 	if(1 == background)	//后台运行
 	{
-		if(daemon(0, 0) < 0)
+		printf("daemon run...\n");
+		if(daemon(1, 0) < 0)
 		{
 			printf("daemon() failure: %s\n", strerror(errno));
 			return -1;
 		}
 	}
-	openlog("ds18b20_client", LOG_CONS | LOG_PID, 0);
+	openlog("client", LOG_CONS | LOG_PID, 0);
 
 	signal(SIGINT, sig_stop);
 	signal(SIGTERM, sig_stop);
@@ -97,6 +98,12 @@ int main(int argc, char *argv[])
 		print_usage(argv[0]);
 		return -1;
 	}
+
+	if(!time)
+	{
+		time = 30;
+	}
+
 	if(!IP)
 	{
 		if((host = gethostbyname(domain)) == NULL)
@@ -142,7 +149,7 @@ int main(int argc, char *argv[])
 				client_fd = socket_client_init(IP, port);
 				if(client_fd > 0)
 				{
-					write_sql_table_values(client_fd);
+					write_sql_table_values(client_fd);	//断线重连后将表中数据发给服务器
 					syslog(LOG_NOTICE, "Program '%s' reconnect success,write the table to server OK!\n", __FILE__);
 					sqlite_delete();	//写完删除表数据
 				}
@@ -161,19 +168,23 @@ int main(int argc, char *argv[])
 			printf("write failure:%s\n",strerror(errno));
 			syslog(LOG_WARNING, "Program '%s' maybe disconnected, insert the message into the table and try to reconnect...\n", __FILE__);
 			close(client_fd);
-			sqlite_insert(msg.serial_num, dt.date, dt.time, msg.temp);
+			sqlite_insert(msg.serial_num, dt.date, dt.time, msg.temp);	//写失败，记录到表中
 		}
 		else
 		{
-			printf("write %d bytes data success: %d\n", rv);
+			printf("write %d bytes data success: \n%s\n", rv, msg_buf);
 			syslog(LOG_NOTICE, "Program '%s' write the message to server OK!\n", __FILE__);
 		}
 		
 		sleep(time);
 	}
-	sqlite_drop_table();
-	syslog(LOG_NOTICE, "Program '%s' stop running\n", __FILE__);
-	closelog();
+
+	if(1 == run_stop)	//想要结束进程时，关闭套接字、删除表、关闭日志系统
+	{
+		close(client_fd);
+		syslog(LOG_NOTICE, "Program '%s' stop running\n", __FILE__);
+		closelog();
+	}
 
 }
 

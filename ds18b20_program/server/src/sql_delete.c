@@ -2,21 +2,22 @@
  *      Copyright:  (C) 2022 Chen Zhenyu<2472734278@qq.com>
  *                  All rights reserved.
  *
- *       Filename:  get_company.c
- *    Description:  This file get msg
+ *       Filename:  sql_delete.c
+ *    Description:  This file is to delete message
  *                 
- *        Version:  1.0.0(30/04/22)
+ *        Version:  1.0.0(03/05/22)
  *         Author:  Chen Zhenyu <2472734278@qq.com>
- *      ChangeLog:  1, Release initial version on "30/04/22 10:39:32"
+ *      ChangeLog:  1, Release initial version on "03/05/22 17:03:31"
  *                 
  ********************************************************************************/
 
 #include <stdio.h>
 #include <stdlib.h>
-#include <sqlite3.h>
+#include <sqlite3.h> 
 
 static int callback(void *data, int argc, char **argv, char **azColName){
    int i;
+   fprintf(stderr, "%s: ", (const char*)data);
    for(i=0; i<argc; i++){
       printf("%s = %s\n", azColName[i], argv[i] ? argv[i] : "NULL");
    }
@@ -30,6 +31,7 @@ int main(int argc, char* argv[])
    char *zErrMsg = 0;
    int rc;
    char *sql;
+   const char* data = "Callback function called";
 
    /* Open database */
    rc = sqlite3_open("get_temp.db", &db);
@@ -40,11 +42,11 @@ int main(int argc, char* argv[])
       fprintf(stderr, "Opened database successfully\n");
    }
 
-   /* Create SQL statement */
-   sql = "SELECT * from temperature_Msg";
+   /* Create merged SQL statement */
+   sql = "DELETE from temperature_Msg;";
 
    /* Execute SQL statement */
-   rc = sqlite3_exec(db, sql, callback, 0, &zErrMsg);
+   rc = sqlite3_exec(db, sql, callback, (void*)data, &zErrMsg);
    if( rc != SQLITE_OK ){
       fprintf(stderr, "SQL error: %s\n", zErrMsg);
       sqlite3_free(zErrMsg);

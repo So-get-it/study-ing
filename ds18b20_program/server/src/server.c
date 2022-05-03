@@ -75,11 +75,13 @@ int main(int argc, char *argv[])
 
 	if(1 == background)     //后台运行
     {
-    	if(daemon(0, 0) < 0)
+		printf("daemon run...\n");
+    	if(daemon(1, 0) < 0)
 		{
 			printf("daemon() failure: %s\n", strerror(errno));
 			return -1;
 		}
+		printf("daemon run or not?\n");
     }
 	openlog("ds18b20_server", LOG_CONS | LOG_PID, 0);
 
@@ -161,7 +163,7 @@ int main(int argc, char *argv[])
 				memset(buf, 0, sizeof(buf));
 				memset(t_buf, 0, sizeof(t_buf));
 
-				read(event_array[i].data.fd, t_buf, sizeof(t_buf));
+				read(event_array[i].data.fd, t_buf, sizeof(t_buf));	//通过读写来让客户端判断是否断线
 				send(event_array[i].data.fd, t_buf, 8, 0);
 				rv = recv(event_array[i].data.fd, buf, sizeof(buf), 0);
 				if(rv <= 0)
@@ -179,8 +181,13 @@ int main(int argc, char *argv[])
 			}
 		}
 	}
-	syslog(LOG_NOTICE, "Program '%s' stop running\n", __FILE__);
-    closelog();
+
+	if(1 == run_stop)
+	{
+		syslog(LOG_NOTICE, "Program '%s' stop running\n", __FILE__);
+    	closelog();
+		goto cleanup;
+	}
 
 cleanup:
 	close(listen_fd);
