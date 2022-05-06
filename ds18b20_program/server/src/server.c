@@ -11,15 +11,17 @@
  *                 
  ********************************************************************************/
 
-#include "server.h"
+
+
+#include "socket_server_init.h"
+#include "sqlite_server.h"
+#include "data_analysis.h"
+
 
 int run_stop = 0;
 
-void sig_stop(int signum)
-{
-	printf("catch the signal: %d\n", signum);
-	run_stop = 1;
-}
+void sig_stop(int signum);
+void print_usage(char *program);
 
 int main(int argc, char *argv[])
 {
@@ -27,6 +29,7 @@ int main(int argc, char *argv[])
 	int                     ch;
 	int                     i, j;
 	int                     rv;
+	int 					rc;
 	int                     listen_fd, client_fd;
 	int                     background = 0;
 	int                     epollfd;
@@ -41,6 +44,7 @@ int main(int argc, char *argv[])
 	char 					t_buf[8];
 	temp_msg 				msg;
 	get_d_time 				dt;
+	sqlite3 				*db;
 	struct sockaddr_in      cli_addr;
 	struct epoll_event      event;
 	struct epoll_event      event_test[MAX_EVENTS];
@@ -83,7 +87,8 @@ int main(int argc, char *argv[])
 		}
 		printf("daemon run or not?\n");
     }
-	openlog("ds18b20_server", LOG_CONS | LOG_PID, 0);
+	
+	openlog("ds18b20_server", LOG_CONS | LOG_PID, 0);	//打开日志系统
 
 	signal(SIGINT, sig_stop);
     signal(SIGTERM, sig_stop);
@@ -116,7 +121,19 @@ int main(int argc, char *argv[])
 		return -2;
 	}
 	
-	sqlite_create_table();
+	rc = sqlite3_open("temp_Msg.db", &db);
+	if( rc )
+	{
+		printf("Can't open database: %s\n", sqlite3_errmsg(db));
+		return -1;
+	}
+	else
+	{
+		printf("Opened database successfully\n");
+	}
+
+	sqlite_create_table(db); 	//创建表
+
 	while(!run_stop)
 	{
 		if((events = epoll_wait(epollfd, event_array, MAX_EVENTS, -1)) < 0)
@@ -163,8 +180,6 @@ int main(int argc, char *argv[])
 				memset(buf, 0, sizeof(buf));
 				memset(t_buf, 0, sizeof(t_buf));
 
-//				read(event_array[i].data.fd, t_buf, sizeof(t_buf));	//通过读写来让客户端判断是否断线
-//				send(event_array[i].data.fd, t_buf, 8, 0);
 				rv = recv(event_array[i].data.fd, buf, sizeof(buf), 0);
 				if(rv <= 0)
 				{
@@ -172,20 +187,23 @@ int main(int argc, char *argv[])
 					close(event_array[i].data.fd);
 					continue;
 				}
-
 				printf("receive %d bytes data from client:\n%s\n", rv, buf);
+
 				syslog(LOG_NOTICE, "Program '%s' receive some message from client OK!\n", __FILE__);
 				printf("start to get memsage...\n");
-				data_analysis(buf, &msg, &dt);
-				sqlite_insert(msg.serial_num, dt.date, dt.time, msg.temp);
+				data_analysis(buf, &msg, &dt); 	 //数据解析到结构体中
+			
+				sqlite_insert(db, msg.serial_num, dt.date, dt.time, msg.temp); 	//记录数据到表中
 			}
 		}
 	}
 
 	if(1 == run_stop)
 	{
+		sqlite3_close(db);
 		syslog(LOG_NOTICE, "Program '%s' stop running\n", __FILE__);
     	closelog();
+
 		goto cleanup;
 	}
 
@@ -195,4 +213,16 @@ cleanup:
 	return 0;
 }
 
+void print_usage(char *program)
+{
+    printf("%s usage: \n", program);
+    printf("-p(--port): sepcify server port\n");
+    printf("-b(--daemon): without arguments to choose run in back or not\n");
+    printf("-h(--help): without arguments for help\n");
+}
 
+void sig_stop(int signum)
+{
+	printf("catch the signal: %d\n", signum);
+	run_stop = 1;
+}

@@ -11,15 +11,15 @@
  *                 
  ********************************************************************************/
 
-#include "server.h"
+#include <stdio.h>
+#include <string.h>
+#include <stdlib.h>
+#include <unistd.h>
+#include <errno.h>
+#include <fcntl.h>
+#include <ctype.h>
+#include "data_analysis.h"
 
-void print_usage(char *program)
-{
-        printf("%s usage: \n", program);
-        printf("-p(--port): sepcify server port\n");
-        printf("-b(--daemon): without arguments to choose run in back or not\n");
-        printf("-h(--help): without arguments for help\n");
-}
 
 void data_analysis(char *data, temp_msg *msg, get_d_time *dt)
 {

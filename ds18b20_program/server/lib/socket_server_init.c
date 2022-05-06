@@ -12,7 +12,7 @@
  ********************************************************************************/
 
 
-#include "server.h"
+#include "socket_server_init.h"
 
 
 int socket_server_init(char *ip, int port)
