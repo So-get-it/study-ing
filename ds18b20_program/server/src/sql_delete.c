@@ -43,7 +43,7 @@ int main(int argc, char* argv[])
    }
 
    /* Create merged SQL statement */
-   sql = "DELETE from temperature_Msg;";
+   sql = "DELETE from temperature_Msg where rowid = 5;";
 
    /* Execute SQL statement */
    rc = sqlite3_exec(db, sql, callback, (void*)data, &zErrMsg);

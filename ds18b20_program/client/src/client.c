@@ -10,59 +10,76 @@
  *      ChangeLog:  1, Release initial version on "22/04/22 14:39:33"
  *                 
  ********************************************************************************/
-
-#include "client.h"
+#include <stdio.h>
+#include <string.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <stdlib.h>
+#include <getopt.h>
+#include <arpa/inet.h>
+#include <sys/types.h>
+#include <unistd.h>
+#include <sys/stat.h>
+#include <signal.h>
+#include <errno.h>
+#include <syslog.h>
+#include <libgen.h>
+#include <netdb.h>
+#include <dirent.h>
+#include <fcntl.h>
+#include <sqlite3.h>
+#include "sqlite_3.h"
+#include "get_date_time.h"
+#include "socket_client.h"
+#include "ds18b20.h"
 
 int run_stop = 0;
 
-void sig_stop(int signum)
-{
-	printf("catch the signal: %d\n", signum);
-	run_stop = 1;
-}
-
+void sig_stop(int signum);
+void print_usage(char *program);
 
 int main(int argc, char *argv[])
 {
 	int 					i = 1;
-	int                     client_fd = -1;
-	int                     rv = 1;
-	int 					rc = -1;
-	int                     port = 0;
-	int 					background = 0;
-	int                     ch;
+	int 					rv = -1;
+	int 					rec;
+	int 					rc;
+	int 					row;
+	int 					max;
+	int 					port = 0;
+	int 					ch;
 	int 					time;
+	int 					client_fd = -1;
+	int 					background = 0;
 	char 					*sql;
 	char 					str[32];
 	char 					d_buf[32];
 	char 			 		t_buf[8];
-	char                    *IP = NULL;
-	char                    **pIP = NULL;
-	char 					*domain = NULL;
-	char                    buf[1024];
+	char 					*host = NULL;
+	char 					**pIP = NULL;
+	char 					buf[1024];
 	char 					msg_buf[128];
-	struct  sockaddr_in     serv_addr;
-	struct hostent          *host = NULL;  //定义hostent结构体
+	char 					sql_msg_buf[128];
+	sqlite3 				*db;
+	struct  sockaddr_in 	serv_addr;
 	struct _temp_msg 		msg;
 	struct _get_d_time 		dt;
-	struct option           opts[] = {
-		{"ipaddr", required_argument, NULL, 'i'},
+	struct _temp_msg 		sql_msg;
+	struct _get_d_time 		sql_dt;
+	struct option 			opts[] = {
+		{"host", required_argument, NULL, 'h'},  //IP地址或域名
 		{"port", required_argument, NULL, 'p'},
-		{"domain", required_argument, NULL, 'd'},//域名
-		{"time", required_argument, NULL, 't'},//采样间隔时间
-		{"daemon", no_argument, NULL, 'b'},//后台运行与否
+		{"time", required_argument, NULL, 't'},  //采样间隔时间
+		{"daemon", no_argument, NULL, 'b'},      //后台运行与否
 		{NULL, 0, NULL, 0}
 	};
 
-	while((ch = getopt_long(argc, argv, "i:d:p:t:b", opts, NULL)) != -1)
+	while((ch = getopt_long(argc, argv, "h:p:t:b", opts, NULL)) != -1)
 	{
 		switch(ch)
 		{
-			case 'i':
-				IP = optarg;
-				break;
-			case 'd':
-				domain = optarg;
+			case 'h':
+				host = optarg;
 				break;
 			case 'p':
 				port = atoi(optarg);
@@ -93,43 +110,20 @@ int main(int argc, char *argv[])
 	signal(SIGTERM, sig_stop);
 	signal(SIGPIPE, SIG_IGN);
 
-	if(!port | !(!IP ^ !domain))
+	if(!port | !host | !time)
 	{
 		print_usage(argv[0]);
 		return -1;
 	}
 
-	if(!time)
+	rc = sqlite3_open("get_temp.db", &db);
+	if( rc )
 	{
-		time = 30;
+		printf("Can't open database: %s\n", sqlite3_errmsg(db));
+		return -1;
 	}
 
-	if(!IP)
-	{
-		if((host = gethostbyname(domain)) == NULL)
-		{
-			printf("gethostbyname error: %s\n", strerror(errno));
-			return -1;
-		}
-		switch(host->h_addrtype)
-		{
-			case AF_INET:
-			case AF_INET6:
-				pIP = host->h_addr_list;
-				for(; *pIP != NULL; pIP++)
-					printf("IP address:%s\n", inet_ntop(host->h_addrtype, *pIP, str, sizeof(str)));
-				IP = str;
-				break;
-			default:
-				printf("unknown address type\n");
-				break;
-		}
-	}
-
-
-	client_fd = socket_client_init(IP, port);
-	printf("connect server socket success: fd[%d]\n", client_fd);
-	sqlite_create_table();	//创建表
+	sqlite_create_table(db);	//创建表
 
 	while(!run_stop)
 	{
@@ -137,43 +131,58 @@ int main(int argc, char *argv[])
 		get_date_time(&dt);
 
 		memset(msg_buf, 0, sizeof(msg_buf));
-		snprintf(msg_buf, sizeof(msg_buf), "Serial number: %s ===Date-Time: %s/%s ===Temperature: %.2f℃", msg.serial_num, dt.date, dt.time, msg.temp);
+		snprintf(msg_buf, sizeof(msg_buf), "Serial number: %s ===Date-Time: %s/%s ===Temperature: %.2f", msg.serial_num, dt.date, dt.time, msg.temp);
 		
-		printf("running the %d time...\n", i);
-		i++;
-
-		if(i != 2)
+		if(client_fd < 0)
 		{
-			if(rv <= 0)
+			client_fd = socket_client_init(host, port);
+			
+			row = sqlite_data_row(db); 	//读表中有多少组数据
+			
+			if(client_fd > 0) 	//如果重连成功
 			{
-				client_fd = socket_client_init(IP, port);
-				if(client_fd > 0)
+				for(i = 0; i < row; i++) 	//如果有表中数据
 				{
-					write_sql_table_values(client_fd);	//断线重连后将表中数据发给服务器
-					syslog(LOG_NOTICE, "Program '%s' reconnect success,write the table to server OK!\n", __FILE__);
-					sqlite_delete();	//写完删除表数据
+					get_sql_table_firstvalue(db, &sql_msg, &sql_dt);	//断线重连后如果表中有数据,获取第一组数据
+
+					memset(sql_msg_buf, 0, sizeof(sql_msg_buf));
+					snprintf(sql_msg_buf, sizeof(sql_msg_buf), "Serial number: %s ===Date-Time: %s/%s ===Temperature: %.2f", sql_msg.serial_num, sql_dt.date, sql_dt.time, sql_msg.temp);
+
+					rec = SocketConnected(client_fd);
+					rv = write(client_fd, sql_msg_buf, strlen(sql_msg_buf));
+					if(rv > 0 | rec == 1) 	//如果发送成功
+					{
+						sqlite_delete(db, sql_dt.time);	//写完依据时间删除表数据
+					}
+					else
+					{
+						break;
+					}
 				}
-//				printf("connect server socket: fd[%d]\n", client_fd);
 			}
+
+			syslog(LOG_NOTICE, "Program '%s' connect success,write the table to server OK!\n", __FILE__);
+
 		}
 
-		write(client_fd, "yeah", 5);
-		memset(t_buf, 0, sizeof(t_buf));
-		rc = recv(client_fd, t_buf, 8, 0);
+		rec = SocketConnected(client_fd); 	//判断socket是否断开
 		rv = write(client_fd, msg_buf, strlen(msg_buf));
-//		rv = send(client_fd, msg_buf, strlen(msg_buf), 0);
-		
-		if(rv < 0 | rc < 0)
+		if(rv < 0 | rec == 0)
 		{
 			printf("write failure:%s\n",strerror(errno));
+
 			syslog(LOG_WARNING, "Program '%s' maybe disconnected, insert the message into the table and try to reconnect...\n", __FILE__);
+			
+			sqlite_insert(db, msg.serial_num, dt.date, dt.time, msg.temp);	//写失败，记录到表中
+
 			close(client_fd);
-			sqlite_insert(msg.serial_num, dt.date, dt.time, msg.temp);	//写失败，记录到表中
+			client_fd = -1;
 		}
 		else
 		{
 			printf("write %d bytes data success: \n%s\n", rv, msg_buf);
-			syslog(LOG_NOTICE, "Program '%s' write the message to server OK!\n", __FILE__);
+
+			syslog(LOG_NOTICE, "Program '%s' write the Temperature message to server OK!\n", __FILE__);
 		}
 		
 		sleep(time);
@@ -182,9 +191,26 @@ int main(int argc, char *argv[])
 	if(1 == run_stop)	//想要结束进程时，关闭套接字、删除表、关闭日志系统
 	{
 		close(client_fd);
+		sqlite3_close(db);
+
 		syslog(LOG_NOTICE, "Program '%s' stop running\n", __FILE__);
 		closelog();
 	}
 
 }
 
+
+void sig_stop(int signum)
+{
+	printf("catch the signal: %d\n", signum);
+	run_stop = 1;
+}
+
+void print_usage(char *program)
+{
+    printf("%s usage: \n", program);
+    printf("-h(--host): sepcify server IP address or domain\n");
+    printf("-p(--port): sepcify server port\n");
+    printf("-t(--time): dwell time in second\n");
+    printf("-b(--daemon): without arguments\n");
+}

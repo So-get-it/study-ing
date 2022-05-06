@@ -11,8 +11,16 @@
  *                 
  ********************************************************************************/
 
+
+
+#include <stdio.h>
 #include <time.h>
-#include "client.h"
+#include <string.h>
+#include <stdlib.h>
+#include <unistd.h>
+#include <errno.h>
+#include <fcntl.h>
+#include "get_date_time.h"
 
 
 void get_date_time(get_d_time *dtime)

@@ -7,7 +7,7 @@
 #include <fcntl.h>
 #include <sys/types.h>
 #include <sys/stat.h>
-#include "client.h"
+#include "ds18b20.h"
 
 
 void get_temp_and_serialnum(temp_msg *packet)

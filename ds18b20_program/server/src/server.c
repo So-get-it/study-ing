@@ -163,8 +163,8 @@ int main(int argc, char *argv[])
 				memset(buf, 0, sizeof(buf));
 				memset(t_buf, 0, sizeof(t_buf));
 
-				read(event_array[i].data.fd, t_buf, sizeof(t_buf));	//通过读写来让客户端判断是否断线
-				send(event_array[i].data.fd, t_buf, 8, 0);
+//				read(event_array[i].data.fd, t_buf, sizeof(t_buf));	//通过读写来让客户端判断是否断线
+//				send(event_array[i].data.fd, t_buf, 8, 0);
 				rv = recv(event_array[i].data.fd, buf, sizeof(buf), 0);
 				if(rv <= 0)
 				{
