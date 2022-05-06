@@ -67,7 +67,6 @@ void sqlite_insert(sqlite3 *db, char *serial_num, char *date, char *time, float 
 	snprintf(sql, 128, "INSERT INTO temp_database VALUES ('%s', '%s', '%s', '%.2f');", serial_num, date, time, temp);
 
 	/* Execute SQL statement */
-//	printf("sqlite insert start running...\n%s\n", sql);
 	rc = sqlite3_exec(db, sql, callback, 0, &zErrMsg);
 	if( rc != SQLITE_OK )
 	{
@@ -125,10 +124,6 @@ void get_sql_table_firstvalue(sqlite3 *db, temp_msg *msg, get_d_time *dt)
 	int             nRow, nColumn;
 	int             i , j;
 	int             index;
-//	char 			*serial_num = NULL;
-//	char 			*date = NULL;
-//	char 			*time = NULL;
-//	char 			*temp = NULL;
 
 	memset(msg->serial_num, 0, sizeof(msg->serial_num));
 	memset(dt->date, 0, sizeof(dt->date));

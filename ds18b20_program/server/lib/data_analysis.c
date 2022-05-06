@@ -32,7 +32,6 @@ void data_analysis(char *data, temp_msg *msg, get_d_time *dt)
 	memset(dt->date, 0, sizeof(dt->date));
 	memset(dt->time, 0, sizeof(dt->time));
 
-//	printf("data: %s\n", data);
 //	get serial_number
 	ptr = strstr(data, "number:");
 	ptr += strlen("number:");
@@ -89,13 +88,7 @@ void data_analysis(char *data, temp_msg *msg, get_d_time *dt)
 		ptr++;
 	}
 	head = ptr;
-/* 
-	while(isblank(*ptr) != '℃')
-	{
-		ptr++;
-	}
-	tail = ptr;
-*/
+
 	memset(buf, 0, sizeof(buf));
 	memcpy(buf, head, 5);
 	msg->temp = atof(buf);

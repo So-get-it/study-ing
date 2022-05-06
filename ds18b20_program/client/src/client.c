@@ -61,7 +61,8 @@ int main(int argc, char *argv[])
 	char 					msg_buf[128];
 	char 					sql_msg_buf[128];
 	sqlite3 				*db;
-	struct  sockaddr_in 	serv_addr;
+
+	struct sockaddr_in 		serv_addr;
 	struct _temp_msg 		msg;
 	struct _get_d_time 		dt;
 	struct _temp_msg 		sql_msg;
@@ -155,12 +156,9 @@ int main(int argc, char *argv[])
 						sqlite_delete(db, sql_dt.time);	//写完依据时间删除表数据
 					}
 					else
-					{
 						break;
-					}
 				}
 			}
-
 			syslog(LOG_NOTICE, "Program '%s' connect success,write the table to server OK!\n", __FILE__);
 
 		}

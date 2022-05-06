@@ -25,26 +25,27 @@ void print_usage(char *program);
 
 int main(int argc, char *argv[])
 {
-	int                     port = 0;
-	int                     ch;
-	int                     i, j;
-	int                     rv;
+	int 					port = 0;
+	int 					ch;
+	int 					i, j;
+	int 					rv;
 	int 					rc;
-	int                     listen_fd, client_fd;
-	int                     background = 0;
-	int                     epollfd;
-	int                     events;
-	char                    *progname;
+	int 					listen_fd, client_fd;
+	int 					background = 0;
+	int 					epollfd;
+	int 					events;
+	char 					*progname;
 	char 					*ptr;
 	char 					*serial_num;
 	char 					*date;
 	char 					*time;
 	char 					*temp;
-	char                    buf[256];
+	char 					buf[256];
 	char 					t_buf[8];
 	temp_msg 				msg;
 	get_d_time 				dt;
 	sqlite3 				*db;
+
 	struct sockaddr_in      cli_addr;
 	struct epoll_event      event;
 	struct epoll_event      event_test[MAX_EVENTS];
@@ -78,7 +79,7 @@ int main(int argc, char *argv[])
 	progname = basename(argv[0]);
 
 	if(1 == background)     //后台运行
-    {
+	{
 		printf("daemon run...\n");
     	if(daemon(1, 0) < 0)
 		{
@@ -86,12 +87,12 @@ int main(int argc, char *argv[])
 			return -1;
 		}
 		printf("daemon run or not?\n");
-    }
+	}
 	
 	openlog("ds18b20_server", LOG_CONS | LOG_PID, 0);	//打开日志系统
 
 	signal(SIGINT, sig_stop);
-    signal(SIGTERM, sig_stop);
+	signal(SIGTERM, sig_stop);
 
 	if(!port)
 	{
