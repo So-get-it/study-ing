@@ -2,7 +2,7 @@
  *      Copyright:  (C) 2022 Chen Zhenyu<2472734278@qq.com>
  *                  All rights reserved.
  *
- *       Filename:  sqlite3.c
+ *       Filename:  sqlite_client.c
  *    Description:  This file is sqlite3's function.
  *                 
  *        Version:  1.0.0(30/04/22)
@@ -10,13 +10,10 @@
  *      ChangeLog:  1, Release initial version on "30/04/22 11:48:58"
  *                 
  ********************************************************************************/
-#include <stdio.h>
-#include <string.h>
-#include <stdlib.h>
-#include <errno.h>
-#include <sqlite3.h>
 
-#include "sqlite_3.h"
+
+
+#include "sqlite_client.h"
 
 
 static int callback(void *NotUsed, int argc, char **argv, char **azColName)
@@ -29,21 +26,27 @@ static int callback(void *NotUsed, int argc, char **argv, char **azColName)
 	return 0;
 }
 
-void sqlite_create_table(sqlite3 *db)
+void sqlite_create_table(char *basename, sqlite3 **db)
 {
 	char 		*zErrMsg = 0;
 	int  		rc;
 	char 		*sql;
 
+	rc = sqlite3_open(basename, db);
+	if( rc )
+	{
+		printf("Can't open database: %s\n", sqlite3_errmsg(*db));
+		return ;
+	}
+
 	/* Create SQL statement */
 	sql = "CREATE TABLE temp_database("  \
 		   "SERIALNUMBER   KEY 		NOT NULL," \
-		   "DATE           CHAR 	NOT NULL," \
 		   "TIME           CHAR 	NOT NULL," \
 		   "TEMPERATURE    CHAR 	NOT NULL);";
 
 	/* Execute SQL statement */
-	rc = sqlite3_exec(db, sql, callback, 0, &zErrMsg);
+	rc = sqlite3_exec(*db, sql, callback, 0, &zErrMsg);
 	if( rc != SQLITE_OK )
 	{
 		printf("SQL error: %s\n", zErrMsg);
@@ -57,14 +60,14 @@ void sqlite_create_table(sqlite3 *db)
 }
 
 
-void sqlite_insert(sqlite3 *db, char *serial_num, char *date, char *time, float temp)
+void sqlite_insert(sqlite3 *db, char *serial_num, char *time, float temp)
 {
 	char		*zErrMsg = 0;
 	int 		rc;
 	char 		*sql;
 
 	sql = (char *)malloc(128);
-	snprintf(sql, 128, "INSERT INTO temp_database VALUES ('%s', '%s', '%s', '%.2f');", serial_num, date, time, temp);
+	snprintf(sql, 128, "INSERT INTO temp_database VALUES ('%s', '%s', '%.2f');", serial_num, time, temp);
 
 	/* Execute SQL statement */
 	rc = sqlite3_exec(db, sql, callback, 0, &zErrMsg);
@@ -116,7 +119,7 @@ void sqlite_delete(sqlite3 *db, char *arg)
 	return ;
 }
 
-void get_sql_table_firstvalue(sqlite3 *db, temp_msg *msg, get_d_time *dt)
+void get_sql_table_firstvalue(sqlite3 *db, char *num, char *time, float *temp)
 {
 	int             result;
 	char            *errmsg = NULL;
@@ -125,16 +128,8 @@ void get_sql_table_firstvalue(sqlite3 *db, temp_msg *msg, get_d_time *dt)
 	int             i , j;
 	int             index;
 
-	memset(msg->serial_num, 0, sizeof(msg->serial_num));
-	memset(dt->date, 0, sizeof(dt->date));
-	memset(dt->time, 0, sizeof(dt->time));
-
-	result = sqlite3_open( "get_temp.db", &db );
-
-	if( result != SQLITE_OK )
-	{
-		return ;
-	}
+	memset(num, 0, 32);
+	memset(time, 0, 64);
 
 	result = sqlite3_get_table( db, "select * from temp_database", &dbResult, &nRow, &nColumn, &errmsg );
 
@@ -147,24 +142,22 @@ void get_sql_table_firstvalue(sqlite3 *db, temp_msg *msg, get_d_time *dt)
 			{
 				if(0 == j)
 				{
-					strncpy(msg->serial_num, dbResult[index], strlen(dbResult[index]));
+					strncpy(num, dbResult[index], strlen(dbResult[index]));
 				}
 				else if(1 == j)
 				{
-					strncpy(dt->date, dbResult[index], strlen(dbResult[index]));
-				}
-				else if(2 == j)
-				{
-					strncpy(dt->time, dbResult[index], strlen(dbResult[index]));
+					strncpy(time, dbResult[index], strlen(dbResult[index]));
 				}
 				else
 				{
-					msg->temp = atof(dbResult[index]);
+					*temp = atof(dbResult[index]);
 				}
 				++index;
 			}
 		}
 	}
+
+	printf("time: %s\n", num);
 
 	sqlite3_free_table( dbResult );
 

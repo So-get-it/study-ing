@@ -11,28 +11,13 @@
  *                 
  ********************************************************************************/
 
-#ifndef _TEMP_H_
-#define _TEMP_H_
-
-typedef struct _temp_msg
-{
-	char    serial_num[32];
-	float   temp;
-}temp_msg;
-
-#endif
-
-#ifndef _DATE_TIME_H_
-#define _DATE_TIME_H_
-
-typedef struct _get_d_time
-{
-	char    date[32];
-	char    time[32];
-}get_d_time;
-
-#endif
+#include <stdio.h>
+#include <string.h>
+#include <stdlib.h>
+#include <unistd.h>
+#include <errno.h>
+#include <fcntl.h>
+#include <ctype.h>
 
 
-
-extern void data_analysis(char *data, temp_msg *msg, get_d_time *dt);
+extern void data_analysis(char *data, char *num, char *time, float *temp);

@@ -12,18 +12,6 @@
  ********************************************************************************/
 
 
-#include <stdio.h>
-#include <string.h>
-#include <sys/socket.h>
-#include <netinet/in.h>
-#include <stdlib.h>
-#include <getopt.h>
-#include <arpa/inet.h>
-#include <sys/types.h>
-#include <unistd.h>
-#include <sys/stat.h>
-#include <errno.h>
-#include <linux/tcp.h>
 #include "socket_client.h"
 
 
@@ -32,14 +20,11 @@ int socket_client_init (char *domain_ip, int port)
 	int 					rv = 0;
 	int 					fd = -1;
 	char 					str[32];
-//	char 					*IP = NULL;
 	char 					**pIP = NULL;
 	
 	struct sockaddr_in 		serv_addr;
 	struct hostent 			*host = NULL;
 
-//	memset(&serv_addr, 0, sizeof(serv_addr));
-//	memset(str, 0, sizeof(str));
 	if( inet_aton(domain_ip, &serv_addr.sin_addr) == 0 )
 	{
 		printf("--------域名解析...\n");

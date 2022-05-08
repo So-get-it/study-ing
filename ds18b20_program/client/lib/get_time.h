@@ -11,15 +11,17 @@
  *                 
  ********************************************************************************/
 
+#ifndef _DATE_TIME_H
+#define _DATE_TIME_H
 
-#ifndef _DATE_TIME_H_
-#define _DATE_TIME_H_
 
-typedef struct _get_d_time
-{
-        char    date[32];
-        char    time[32];
-}get_d_time;
+#include <stdio.h>
+#include <time.h>
+#include <string.h>
+#include <stdlib.h>
+#include <unistd.h>
+#include <errno.h>
+#include <fcntl.h>
 
 #endif
 
@@ -27,7 +29,7 @@ typedef struct _get_d_time
 #ifndef _get_d_time_H_
 #define _get_d_time_H_
 
-extern void get_date_time(get_d_time *dt);
+extern void get_time(char *dtime);
 
 #endif
 

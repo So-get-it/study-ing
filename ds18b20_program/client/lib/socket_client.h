@@ -2,7 +2,7 @@
  *      Copyright:  (C) 2022 Chen Zhenyu<2472734278@qq.com>
  *                  All rights reserved.
  *
- *       Filename:  socket_client_init.h
+ *       Filename:  socket_client.h
  *    Description:  This head file is socket_client_init.h
  *
  *        Version:  1.0.0(04/05/22)
@@ -27,6 +27,9 @@
 #include <errno.h>
 #include <netdb.h>
 #include <fcntl.h>
+#include <errno.h>
+#include <linux/tcp.h>
+
 
 #endif
 

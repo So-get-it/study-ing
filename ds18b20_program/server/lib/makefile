@@ -5,7 +5,7 @@ all: d_lib s_lib
 	@make clear
 
 d_lib:
-	gcc -shared -fPIC *.c -o lib${LIBNAME}.so
+	gcc -shared -fPIC *.c -o lib${LIBNAME}.so -I /home/chenzhenyu/czy/local/sql-lib/include/
 
 s_lib:
 	gcc -c *.c

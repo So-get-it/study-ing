@@ -11,26 +11,18 @@
  *                 
  ********************************************************************************/
 
-#include <stdio.h>
-#include <string.h>
-#include <stdlib.h>
-#include <unistd.h>
-#include <errno.h>
-#include <fcntl.h>
-#include <ctype.h>
 #include "data_analysis.h"
 
 
-void data_analysis(char *data, temp_msg *msg, get_d_time *dt)
+void data_analysis(char *data, char *num, char *time, float *temp)
 {
 	char 		buf[8];
 	char 		*ptr;
 	char 		*head;
 	char 		*tail;
 
-	memset(msg->serial_num, 0, sizeof(msg->serial_num));
-	memset(dt->date, 0, sizeof(dt->date));
-	memset(dt->time, 0, sizeof(dt->time));
+	memset(num, 0, sizeof(num));
+	memset(time, 0, sizeof(time));
 
 //	get serial_number
 	ptr = strstr(data, "number:");
@@ -47,29 +39,16 @@ void data_analysis(char *data, temp_msg *msg, get_d_time *dt)
 	}
 	tail = ptr;
 
-	memcpy(msg->serial_num, head, tail-head);
+	memcpy(num, head, tail-head);
 
-//	get date
+//	get time
 	ptr = strstr(data, "Time:");
 	ptr += strlen("Time:");
+
 	while(isblank(*ptr))
 	{
 		ptr++;
 	}
-	head = ptr;
-
-	while(*ptr != '/')
-	{
-		ptr++;
-	}
-	tail = ptr;
-
-	memcpy(dt->date, head, tail-head);
-
-//	get time
-	ptr = strstr(data, "/");
-	ptr += strlen("/");
-
 	head = ptr;
 
 	while(!isblank(*ptr))
@@ -78,7 +57,7 @@ void data_analysis(char *data, temp_msg *msg, get_d_time *dt)
 	}
 	tail = ptr;
 
-	memcpy(dt->time, head, tail-head);
+	memcpy(time, head, tail-head);
 
 //	get temperature
 	ptr = strstr(data, "ture:");
@@ -91,5 +70,5 @@ void data_analysis(char *data, temp_msg *msg, get_d_time *dt)
 
 	memset(buf, 0, sizeof(buf));
 	memcpy(buf, head, 5);
-	msg->temp = atof(buf);
+	*temp = atof(buf);
 }

@@ -12,22 +12,23 @@
  ********************************************************************************/
 
 
-#ifndef _TEMP_H_
-#define _TEMP_H_
 
-typedef struct _temp_msg
-{
-        char    serial_num[32];
-        float   temp;
-}temp_msg;
 
-#endif
+#include <stdio.h>
+#include <errno.h>
+#include <unistd.h>
+#include <stdlib.h>
+#include <dirent.h>
+#include <string.h>
+#include <fcntl.h>
+#include <sys/types.h>
+#include <sys/stat.h>
 
 
 #ifndef _DS18B20_H_
 #define _DS18B20_H_
 
-extern void get_temp_and_serialnum(temp_msg *packet);
+extern void get_temp_and_serialnum(char *number, float *temper);
 
 
 #endif

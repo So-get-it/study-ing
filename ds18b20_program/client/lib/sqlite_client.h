@@ -16,24 +16,24 @@
 
 #include <stdio.h>
 #include <string.h>
+#include <stdlib.h>
+#include <errno.h>
 #include <sqlite3.h>
-#include "get_date_time.h"
-#include "ds18b20.h"
 
 
 #endif
 
 
 
-extern void sqlite_create_table(sqlite3 *db);
+extern void sqlite_create_table(char *basename, sqlite3 **db);
 
 extern void sqlite_drop_table(sqlite3 *db);
 
-extern void sqlite_insert(sqlite3 *db, char *serial_num, char *date, char *time, float temp);
+extern void sqlite_insert(sqlite3 *db, char *serial_num, char *time, float temp);
 
 extern int sqlite_data_row(sqlite3 *db);
 
 extern void sqlite_delete(sqlite3 *db, char *arg);
 
-extern void get_sql_table_firstvalue(sqlite3 *db, temp_msg *msg, get_d_time *dt);
+extern void get_sql_table_firstvalue(sqlite3 *db, char *num, char *time, float *temp);
 

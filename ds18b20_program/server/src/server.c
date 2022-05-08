@@ -16,6 +16,7 @@
 #include "socket_server_init.h"
 #include "sqlite_server.h"
 #include "data_analysis.h"
+#include "server.h"
 
 
 int run_stop = 0;
@@ -36,16 +37,11 @@ int main(int argc, char *argv[])
 	int 					events;
 	char 					*progname;
 	char 					*ptr;
-	char 					*serial_num;
-	char 					*date;
-	char 					*time;
-	char 					*temp;
 	char 					buf[256];
 	char 					t_buf[8];
-	temp_msg 				msg;
-	get_d_time 				dt;
 	sqlite3 				*db;
 
+	sample_msg  			msg;
 	struct sockaddr_in      cli_addr;
 	struct epoll_event      event;
 	struct epoll_event      event_test[MAX_EVENTS];
@@ -122,18 +118,7 @@ int main(int argc, char *argv[])
 		return -2;
 	}
 	
-	rc = sqlite3_open("temp_Msg.db", &db);
-	if( rc )
-	{
-		printf("Can't open database: %s\n", sqlite3_errmsg(db));
-		return -1;
-	}
-	else
-	{
-		printf("Opened database successfully\n");
-	}
-
-	sqlite_create_table(db); 	//创建表
+	sqlite_create_table("get_temp.db", &db); 	//创建表
 
 	while(!run_stop)
 	{
@@ -188,13 +173,13 @@ int main(int argc, char *argv[])
 					close(event_array[i].data.fd);
 					continue;
 				}
-				printf("receive %d bytes data from client:\n%s\n", rv, buf);
+				printf("%s\n", buf);
 
 				syslog(LOG_NOTICE, "Program '%s' receive some message from client OK!\n", __FILE__);
-				printf("start to get memsage...\n");
-				data_analysis(buf, &msg, &dt); 	 //数据解析到结构体中
+
+				data_analysis(buf, msg.serial_num, msg.time, &msg.temp); 	 //数据解析到结构体中
 			
-				sqlite_insert(db, msg.serial_num, dt.date, dt.time, msg.temp); 	//记录数据到表中
+				sqlite_insert(db, msg.serial_num, msg.time, msg.temp); 	//记录数据到表中
 			}
 		}
 	}
@@ -202,6 +187,7 @@ int main(int argc, char *argv[])
 	if(1 == run_stop)
 	{
 		sqlite3_close(db);
+
 		syslog(LOG_NOTICE, "Program '%s' stop running\n", __FILE__);
     	closelog();
 

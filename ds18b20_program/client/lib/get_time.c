@@ -13,47 +13,22 @@
 
 
 
-#include <stdio.h>
-#include <time.h>
-#include <string.h>
-#include <stdlib.h>
-#include <unistd.h>
-#include <errno.h>
-#include <fcntl.h>
-#include "get_date_time.h"
+#include "get_time.h"
 
-
-void get_date_time(get_d_time *dtime)
+void get_time(char *dtime)
 {
 	time_t 			t = time(NULL);
 	struct tm	 	*p = localtime(&t);
-	char 			*d_buf = NULL;
 	char 			*t_buf = NULL;
-	get_d_time 		*dt = dtime;
 
-	d_buf = (char *)malloc(32);
-	snprintf(d_buf, 32, "%4d-%02d-%02d", p->tm_year + 1900, p->tm_mon +1, p->tm_mday);
 	t_buf = (char *)malloc(32);
-	snprintf(t_buf, 32, "%02d:%02d:%02d", p->tm_hour, p->tm_min, p->tm_sec);
+	snprintf(t_buf, 64, "%4d-%02d-%02d/%02d:%02d:%02d", p->tm_year+1900, p->tm_mon+1, p->tm_mday, p->tm_hour, p->tm_min, p->tm_sec);
 
-//	printf("Local time is: %s\n", asctime(p));
+	memset(dtime, 0, sizeof(dtime));
 
-	memset(dt->date, 0, 32);
-	memset(dt->time, 0, 32);
+	strncpy(dtime, t_buf, strlen(t_buf));
 
-	strncpy(dt->date, d_buf, 32);
-	strncpy(dt->time, t_buf, 32);
-
-	free(d_buf);
 	free(t_buf);
 	return ;
 } 
-
-
-
-
-
-
-
-
 

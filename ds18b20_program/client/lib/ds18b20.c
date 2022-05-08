@@ -1,21 +1,15 @@
-#include <stdio.h>
-#include <errno.h>
-#include <unistd.h>
-#include <stdlib.h>
-#include <dirent.h>
-#include <string.h>
-#include <fcntl.h>
-#include <sys/types.h>
-#include <sys/stat.h>
+
+
+
 #include "ds18b20.h"
 
 
-void get_temp_and_serialnum(temp_msg *packet)
+void get_temp_and_serialnum(char *number, float *temper)
 {
 	char 			buf[128];
+	char 			n_buf[32];
 	int 			fd;
 	int 			rv = -1;
-	temp_msg		*msg = packet;	
 	float 			temp1;
 	char 			path[64] = "/sys/bus/w1/devices/";
 	char 			*temp = NULL;
@@ -26,32 +20,29 @@ void get_temp_and_serialnum(temp_msg *packet)
 	if(!dirp)
 	{
 		printf("open directary %s failure:%s", path, strerror(errno));
-		//return -1;
+		return ;
 	}
 	
-	memset(msg->serial_num, 0, 32);
+	memset(n_buf, 0, sizeof(n_buf));
 	while(NULL != (direntp = readdir(dirp)))
 	{
 		if( strstr(direntp->d_name,"28-"))
 		{
-			strncpy(msg->serial_num,direntp->d_name,sizeof(msg->serial_num));
-			//printf("%s: %s\n", direntp->d_name, msg->serial_num);
+			strncpy(n_buf,direntp->d_name,sizeof(n_buf));
 		}
-		//printf("%s: %s\n", direntp->d_name, msg->serial_num);
 	}
 
 	closedir(dirp);
 	
-	strncat(path,msg->serial_num,sizeof(msg->serial_num));
+	strncat(path,n_buf,sizeof(n_buf));
 	strncat(path,"/w1_slave",sizeof(path)-strlen("/w1_slave"));
 	
-	//printf("path: %s\n", path);
 	fd = open(path, O_RDONLY);
 
 	if(fd < 0)
 	{
 		printf("open directary file:%s\n",strerror(errno));
-		//return -1;
+		return ;
 	}
 
 	memset(buf, 0, sizeof(buf));
@@ -60,15 +51,17 @@ void get_temp_and_serialnum(temp_msg *packet)
 	if(rv <= 0)
 	{
 		printf("read something failure:%s\n",strerror(errno));
-		//return -2;
+		return ;
 	}
 	temp = strstr(buf, "t=");
 	temp = temp + 2;
-	msg->temp = atof(temp)/1000;
-
+	*temper = atof(temp)/1000;
 	
-	close(fd);
-	//return msg;
+	memset(number, 0, sizeof(number));
+	strncpy(number, "czy-001", strlen("czy-001"));
 
+	close(fd);
+
+	return ;
 }
 

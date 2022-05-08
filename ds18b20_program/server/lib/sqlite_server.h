@@ -2,7 +2,7 @@
  *      Copyright:  (C) 2022 Chen Zhenyu<2472734278@qq.com>
  *                  All rights reserved.
  *
- *       Filename:  sqlite3.h
+ *       Filename:  sqlite_server.h
  *    Description:  This head file is sqlite function.
  *
  *        Version:  1.0.0(04/05/22)
@@ -16,6 +16,8 @@
 
 #include <stdio.h>
 #include <string.h>
+#include <stdlib.h>
+#include <errno.h>
 #include <sqlite3.h>
 
 
@@ -23,38 +25,15 @@
 
 
 
-#ifndef _TEMP_H_
-#define _TEMP_H_
+extern void sqlite_create_table(char *basename, sqlite3 **db);
 
-typedef struct _temp_msg
-{
-        char    serial_num[32];
-        float   temp;
-}temp_msg;
+extern void sqlite_drop_table(sqlite3 *db);
 
-#endif
-
-
-
-#ifndef _DATE_TIME_H_
-#define _DATE_TIME_H_
-
-typedef struct _get_d_time
-{
-        char    date[32];
-        char    time[32];
-}get_d_time;
-
-#endif
-
-
-
-extern void sqlite_create_table(sqlite3 *db);
-
-
-extern void sqlite_insert(sqlite3 *db, char *serial_num, char *date, char *time, float temp);
+extern void sqlite_insert(sqlite3 *db, char *serial_num, char *time, float temp);
 
 extern int sqlite_data_row(sqlite3 *db);
 
+extern void sqlite_delete(sqlite3 *db, char *arg);
 
+extern void get_sql_table_firstvalue(sqlite3 *db, char *num, char *time, float temp);
 
