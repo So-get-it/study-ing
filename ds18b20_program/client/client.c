@@ -131,6 +131,12 @@ int main(int argc, char *argv[])
 		printf("Sample successfully!\n");
 		sample_flag = 1; 	//已采样
 
+		if(client_fd < 0)
+		{
+			client_fd = socket_client_init(host, port);
+			syslog(LOG_NOTICE, "Program '%s' connect success,write the table to server OK!\n", __FILE__);
+		}
+
 		while( ( (time_now = time(NULL)) - time_sample ) < sleep_time ) 	//没有超过采样间隔时间
 		{
 			if(client_fd < 0)
@@ -167,7 +173,7 @@ int main(int argc, char *argv[])
 
 					sample_flag = 0;
 				}
-				else
+				else 	//无采样值
 				{
 					row = sqlite_data_row(db); 	//读表中有多少组数据
 					if(row > 0) 	
