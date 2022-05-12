@@ -1,11 +1,11 @@
-LIBNAME=server
-INSTPATH=`pwd`/../src
+LIBNAME=ds18b20
+INSTPATH=`pwd`/../client
 
 all: d_lib s_lib
 	@make clear
 
 d_lib:
-	gcc -shared -fPIC *.c -o lib${LIBNAME}.so -I /home/chenzhenyu/czy/local/sql-lib/include/
+	gcc -shared -fPIC *.c -o lib${LIBNAME}.so
 
 s_lib:
 	gcc -c *.c

@@ -11,10 +11,35 @@
  *                 
  ********************************************************************************/
 
+#include <stdio.h>
+#include <string.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <stdlib.h>
+#include <getopt.h>
+#include <arpa/inet.h>
+#include <sys/types.h>
+#include <unistd.h>
+#include <sys/stat.h>
+#include <errno.h>
+#include <netdb.h>
+#include <fcntl.h>
+#include <errno.h>
+#include <linux/tcp.h>
 
 #include "socket_client.h"
 
-
+/*
+ * =====================================================================================
+ *         Name:  socket_client_init
+ *  Description:  To get socket client fd
+ *   Input args:  
+ *   				domain_ip: the hostname for client
+ *   					 port: connect server port for client
+ *
+ * return value:  <0: failure 	>0:ok
+ * =====================================================================================
+ */
 int socket_client_init (char *domain_ip, int port)
 {
 	int 					rv = 0;
@@ -73,7 +98,14 @@ int socket_client_init (char *domain_ip, int port)
 	return fd;
 } 
 
-
+/*
+ * =====================================================================================
+ *         Name:  SocketConnected
+ *  Description:  To judge socket disconnected or not.
+ *   Input args:  socket file description
+ * return value:  1 (connected) or 0 (disconnected)
+ * =====================================================================================
+ */
 int SocketConnected(int sock)
 {
 	if (sock <= 0)

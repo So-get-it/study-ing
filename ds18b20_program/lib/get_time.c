@@ -11,10 +11,27 @@
  *                 
  ********************************************************************************/
 
-
+#include <stdio.h>
+#include <time.h>
+#include <string.h>
+#include <stdlib.h>
+#include <unistd.h>
+#include <errno.h>
+#include <fcntl.h>
 
 #include "get_time.h"
 
+
+
+/* 
+ * =====================================================================================
+ *         Name:  get_time
+ *  Description:  get date and time now
+ *   Input args:  dtime: date and time
+ *  Output args:  date/time with (xxxx-xx-xx/xx:xx:xx)
+ * return value:  NULL
+ * =====================================================================================
+ */
 void get_time(char *dtime)
 {
 	time_t 			t = time(NULL);

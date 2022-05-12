@@ -1,10 +1,28 @@
 
-
+#include <stdio.h>
+#include <errno.h>
+#include <unistd.h>
+#include <stdlib.h>
+#include <dirent.h>
+#include <string.h>
+#include <fcntl.h>
+#include <sys/types.h>
+#include <sys/stat.h>
 
 #include "ds18b20.h"
 
 
-void get_temp_and_serialnum(char *number, float *temper)
+
+/* 
+ * =====================================================================================
+ *         Name:  get_temperature
+ *  Description:  get temperature from ds18b20
+ *   Input args:  
+ *   				$temper: address for temperature
+ * return value:  NULL
+ * =====================================================================================
+ */
+void get_temperature(float *temper)
 {
 	char 			buf[128];
 	char 			n_buf[32];
@@ -57,9 +75,6 @@ void get_temp_and_serialnum(char *number, float *temper)
 	temp = temp + 2;
 	*temper = atof(temp)/1000;
 	
-	memset(number, 0, sizeof(number));
-	strncpy(number, "czy-001", strlen("czy-001"));
-
 	close(fd);
 
 	return ;

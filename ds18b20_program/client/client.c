@@ -10,10 +10,27 @@
  *      ChangeLog:  1, Release initial version on "22/04/22 14:39:33"
  *                 
  ********************************************************************************/
+#include <stdio.h>
+#include <string.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <stdlib.h>
+#include <getopt.h>
+#include <arpa/inet.h>
+#include <sys/types.h>
+#include <unistd.h>
+#include <sys/stat.h>
+#include <signal.h>
+#include <errno.h>
+#include <syslog.h>
+#include <libgen.h>
+#include <netdb.h>
+#include <dirent.h>
+#include <fcntl.h>
+#include <time.h>
+#include <sqlite3.h>
 
-
-#include "client.h"
-#include "sqlite_client.h"
+#include "sqlite_func.h"
 #include "get_time.h"
 #include "socket_client.h"
 #include "ds18b20.h"
@@ -99,12 +116,13 @@ int main(int argc, char *argv[])
 	}
 
 	sqlite_create_table("get_temp.db", &db);	//创建表
+	memset(msg.serial_num, 0, sizeof(msg.serial_num));
+	strncpy(msg.serial_num, "czy-001", strlen("czy-001"));
 
 	while(!run_stop)
 	{
-		get_temp_and_serialnum(msg.serial_num, &msg.temp);
+		get_temperature(&msg.temp);
 		get_time(msg.time);
-
 		time_sample = time(NULL); 	//采样时间
 
 		memset(msg_buf, 0, sizeof(msg_buf));

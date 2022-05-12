@@ -11,12 +11,29 @@
  *                 
  ********************************************************************************/
 
-
+#include <stdio.h>
+#include <string.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <stdlib.h>
+#include <getopt.h>
+#include <arpa/inet.h>
+#include <sys/types.h>
+#include <unistd.h>
+#include <sys/stat.h>
+#include <signal.h>
+#include <errno.h>
+#include <syslog.h>
+#include <libgen.h>
+#include <netdb.h>
+#include <dirent.h>
+#include <fcntl.h>
+#include <sqlite3.h>
 
 #include "socket_server_init.h"
-#include "sqlite_server.h"
+#include "sqlite_func.h"
 #include "data_analysis.h"
-#include "server.h"
+#include "ds18b20.h"
 
 
 int run_stop = 0;

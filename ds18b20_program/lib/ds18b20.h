@@ -12,23 +12,33 @@
  ********************************************************************************/
 
 
+#ifndef _SAMPLE_H_
+#define _SAMPLE_H_
 
+typedef struct _get_sample_msg
+{
+    char    serial_num[32];
+    char    time[64];
+    float   temp;
+}sample_msg;
 
-#include <stdio.h>
-#include <errno.h>
-#include <unistd.h>
-#include <stdlib.h>
-#include <dirent.h>
-#include <string.h>
-#include <fcntl.h>
-#include <sys/types.h>
-#include <sys/stat.h>
+#endif
 
 
 #ifndef _DS18B20_H_
 #define _DS18B20_H_
 
-extern void get_temp_and_serialnum(char *number, float *temper);
+/*
+ * =====================================================================================
+ *         Name:  get_temperature
+ *  Description:  get temperature from ds18b20
+ *   Input args:
+ *                $temper: address for temperature
+ * return value:  NULL
+ * =====================================================================================
+ */
+
+extern void get_temperature(float *temper);
 
 
 #endif

@@ -11,23 +11,20 @@
  *                 
  ********************************************************************************/
 
-#ifndef _DATE_TIME_H
-#define _DATE_TIME_H
-
-
-#include <stdio.h>
-#include <time.h>
-#include <string.h>
-#include <stdlib.h>
-#include <unistd.h>
-#include <errno.h>
-#include <fcntl.h>
-
-#endif
 
 
 #ifndef _get_d_time_H_
 #define _get_d_time_H_
+
+/*
+ * =====================================================================================
+ *         Name:  get_time
+ *  Description:  get date and time now
+ *   Input args:  dtime: date and time
+ *  Output args:  date/time with (xxxx-xx-xx/xx:xx:xx)
+ * return value:  NULL
+ * =====================================================================================
+ */
 
 extern void get_time(char *dtime);
 
