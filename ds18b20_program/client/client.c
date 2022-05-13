@@ -131,6 +131,8 @@ int main(int argc, char *argv[])
 		printf("Sample successfully!\n");
 		sample_flag = 1; 	//已采样
 
+
+		/*first connect*/
 		if(client_fd < 0)
 		{
 			client_fd = socket_client_init(host, port);
@@ -139,6 +141,7 @@ int main(int argc, char *argv[])
 
 		while( ( (time_now = time(NULL)) - time_sample ) < sleep_time ) 	//没有超过采样间隔时间
 		{
+			/*if disconnect*/
 			if(client_fd < 0)
 			{
 				client_fd = socket_client_init(host, port);
