@@ -38,7 +38,7 @@ typedef struct _get_sample_msg
  * =====================================================================================
  */
 
-extern void get_temperature(float *temper);
+extern int get_temperature(float *temper);
 
 
 #endif

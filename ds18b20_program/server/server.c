@@ -95,16 +95,6 @@ int main(int argc, char *argv[])
 
 	progname = basename(argv[0]);
 
-	if(1 == background)     //后台运行
-	{
-		printf("daemon run...\n");
-    	if(daemon(1, 0) < 0)
-		{
-			log_error("daemon() failure: %s\n", strerror(errno));
-			return -1;
-		}
-	}
-	
 	if(debug)
 	{
 		logfile = "stdout";
@@ -117,6 +107,16 @@ int main(int argc, char *argv[])
 		return -1;
 	}
 
+	if(1 == background)     //后台运行
+	{
+		log_info("daemon run...\n");
+    	if(daemon(1, 0) < 0)
+		{
+			log_error("daemon() failure: %s\n", strerror(errno));
+			return -1;
+		}
+	}
+	
 	signal(SIGINT, sig_stop);
 	signal(SIGTERM, sig_stop);
 

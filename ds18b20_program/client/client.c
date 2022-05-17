@@ -96,16 +96,6 @@ int main(int argc, char *argv[])
 		}
 	}
 
-	if(1 == background)	//后台运行
-	{
-		printf("daemon run...\n");
-		if(daemon(1, 0) < 0)
-		{
-			printf("daemon() failure: %s\n", strerror(errno));
-			return -1;
-		}
-	}
-
 	if(debug)
 	{
 		logfile = "stdout";
@@ -117,6 +107,16 @@ int main(int argc, char *argv[])
         fprintf(stderr, "Initial logger file '%s' failure: %s\n", logfile, strerror(errno));
         return 1;
     }
+
+	if(1 == background)	//后台运行
+	{
+		log_info("daemon run...\n");
+		if(daemon(1, 0) < 0)
+		{
+			printf("daemon() failure: %s\n", strerror(errno));
+			return -1;
+		}
+	}
 
 	signal(SIGINT, sig_stop);
 	signal(SIGTERM, sig_stop);
@@ -134,15 +134,19 @@ int main(int argc, char *argv[])
 
 	while(!run_stop)
 	{
-		get_temperature(&msg.temp);
+		if(get_temperature(&msg.temp) < 0)
+		{
+			log_error("Sample failure: %s\n", strerror(errno));
+		}
+		else
+		{
+			log_info("Sample successfully!\n");
+			sample_flag = 1; 	//已采样
+		}
 		time_sample = get_dtime(msg.time); 	//采样时间
 
 		memset(msg_buf, 0, sizeof(msg_buf));
 		snprintf(msg_buf, sizeof(msg_buf), "Serial number: %s ===Date-Time: %s ===Temperature: %.2f", msg.serial_num, msg.time, msg.temp);
-
-		log_info("Sample successfully!\n");
-		sample_flag = 1; 	//已采样
-
 
 		/*first connect*/
 		if(client_fd < 0)
@@ -242,7 +246,7 @@ int main(int argc, char *argv[])
 		close(client_fd);
 		sqlite3_close(db);
 
-		syslog(LOG_NOTICE, "Program '%s' stop running\n", __FILE__);
+		log_info("Program '%s' stop running\n", __FILE__);
 		closelog();
 	}
 

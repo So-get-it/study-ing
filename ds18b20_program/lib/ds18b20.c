@@ -23,7 +23,7 @@
  * return value:  NULL
  * =====================================================================================
  */
-void get_temperature(float *temper)
+int get_temperature(float *temper)
 {
 	char 			buf[128];
 	char 			n_buf[32];
@@ -39,7 +39,7 @@ void get_temperature(float *temper)
 	if(!dirp)
 	{
 		log_error("open directary %s failure:%s", path, strerror(errno));
-		return ;
+		return -1;
 	}
 	
 	memset(n_buf, 0, sizeof(n_buf));
@@ -61,7 +61,7 @@ void get_temperature(float *temper)
 	if(fd < 0)
 	{
 		log_error("open directary file:%s\n",strerror(errno));
-		return ;
+		return -2;
 	}
 
 	memset(buf, 0, sizeof(buf));
@@ -70,7 +70,7 @@ void get_temperature(float *temper)
 	if(rv <= 0)
 	{
 		log_error("read something failure:%s\n",strerror(errno));
-		return ;
+		return -3;
 	}
 	temp = strstr(buf, "t=");
 	temp = temp + 2;
@@ -78,6 +78,6 @@ void get_temperature(float *temper)
 	
 	close(fd);
 
-	return ;
+	return 0;
 }
 
