@@ -36,7 +36,6 @@
 #include "ds18b20.h"
 #include "logger.h"
 
-#define DEBUG 0
 
 int run_stop = 0;
 
@@ -53,6 +52,7 @@ int main(int argc, char *argv[])
 	int 					client_fd = -1;
 	int 					background = 0;
 	int 					sample_flag = 0;
+	int 					debug = 1;
 	int 					loglevel = LOG_LEVEL_INFO;
 	char 					*logfile = "client.log";
 	char 					d_buf[32];
@@ -89,6 +89,7 @@ int main(int argc, char *argv[])
 				break;
 			case 'b':
 				background = 1;
+				debug = 0;
 				break;
 			default:
 				printf("Unknown return val: %d\n", ch);
@@ -105,7 +106,7 @@ int main(int argc, char *argv[])
 		}
 	}
 
-	if(DEBUG)
+	if(debug)
 	{
 		logfile = "stdout";
 		loglevel = LOG_LEVEL_DEBUG;
@@ -152,7 +153,7 @@ int main(int argc, char *argv[])
 			}
 		}
 
-		while( ( (time_now = time(NULL)) - time_sample ) < sleep_time ) 	//没有超过采样间隔时间
+		while( check_timeout(time_sample, sleep_time) ) 	//没有超过采样间隔时间
 		{
 			/*if disconnect*/
 			if(client_fd < 0)

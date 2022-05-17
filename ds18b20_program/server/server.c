@@ -36,8 +36,6 @@
 #include "ds18b20.h"
 #include "logger.h"
 
-#define DEBUG 1
-
 int run_stop = 0;
 
 void sig_stop(int signum);
@@ -50,6 +48,7 @@ int main(int argc, char *argv[])
 	int 					i, j;
 	int 					rv;
 	int 					rc;
+	int 					debug = 1;
 	int 					listen_fd, client_fd;
 	int 					background = 0;
 	int 					epollfd;
@@ -81,6 +80,7 @@ int main(int argc, char *argv[])
 		{
 			case 'b':
 				background = 1;
+				debug = 0;
 				break;
 			case 'p':
 				port = atoi(optarg);
@@ -105,7 +105,7 @@ int main(int argc, char *argv[])
 		}
 	}
 	
-	if(DEBUG)
+	if(debug)
 	{
 		logfile = "stdout";
 		loglevel = LOG_LEVEL_DEBUG;
@@ -218,7 +218,7 @@ int main(int argc, char *argv[])
 	{
 		sqlite3_close(db);
 
-		syslog(LOG_NOTICE, "Program '%s' stop running\n", __FILE__);
+		log_info("Program '%s' stop running\n", __FILE__);
     	closelog();
 
 		goto cleanup;

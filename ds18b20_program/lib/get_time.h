@@ -28,5 +28,19 @@
 
 extern time_t get_dtime(char *dtime);
 
+
+/* 
+ * =====================================================================================
+ *         Name:  check_timeout
+ *  Description:  check time out or not
+ *   Input args:
+ *   				sample_time: time when sample
+ *   				    timeout: how many seconds is timeout
+ *
+ * return value:  1: time not out    0: timeout
+ * =====================================================================================
+ */
+extern int check_timeout(time_t sample_time, int timeout);
+
 #endif
 

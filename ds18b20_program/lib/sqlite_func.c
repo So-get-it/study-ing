@@ -224,7 +224,7 @@ void get_sql_table_firstvalue(sqlite3 *db, char *num, char *time, float *temp)
 		}
 	}
 
-	log_debug("time: %s\n", num);
+	log_debug("time: %s\n", time);
 
 	sqlite3_free_table( dbResult );
 

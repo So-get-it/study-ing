@@ -48,10 +48,34 @@ time_t get_dtime(char *dtime)
 	memset(t_buf, 0, 32);
 	snprintf(t_buf, 32, "%4d-%02d-%02d/%02d:%02d:%02d", p->tm_year+1900, p->tm_mon+1, p->tm_mday, p->tm_hour, p->tm_min, p->tm_sec);
 
-	memset(dtime, 0, sizeof(dtime));
+	memset(dtime, 0, 32);
 	strncpy(dtime, t_buf, strlen(t_buf));
 
 //	free(t_buf);
 	return t;
 } 
 
+/*
+ * =====================================================================================
+ *         Name:  check_timeout
+ *  Description:  check time out or not
+ *   Input args:
+ *                              sample_time: time when sample
+ *                                  timeout: how many seconds is timeout
+ *
+ * return value:  1: time not out    0: timeout
+ * =====================================================================================
+ */
+int check_timeout(time_t sample_time, int timeout)
+{
+	time_t 			t = time(NULL);
+
+	if((t - sample_time) < timeout)
+	{
+		return 1;
+	}
+	else
+	{
+		return 0;
+	}
+}
