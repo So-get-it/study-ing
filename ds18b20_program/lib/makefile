@@ -24,3 +24,4 @@ clear:
 
 clean: clear
 	rm -f lib${LIBNAME}.*
+

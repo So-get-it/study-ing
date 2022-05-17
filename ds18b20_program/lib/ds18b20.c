@@ -38,7 +38,7 @@ void get_temperature(float *temper)
 	dirp = opendir(path);
 	if(!dirp)
 	{
-		printf("open directary %s failure:%s", path, strerror(errno));
+		log_error("open directary %s failure:%s", path, strerror(errno));
 		return ;
 	}
 	
@@ -60,7 +60,7 @@ void get_temperature(float *temper)
 
 	if(fd < 0)
 	{
-		printf("open directary file:%s\n",strerror(errno));
+		log_error("open directary file:%s\n",strerror(errno));
 		return ;
 	}
 
@@ -69,7 +69,7 @@ void get_temperature(float *temper)
 	rv = read(fd, buf, sizeof(buf));
 	if(rv <= 0)
 	{
-		printf("read something failure:%s\n",strerror(errno));
+		log_error("read something failure:%s\n",strerror(errno));
 		return ;
 	}
 	temp = strstr(buf, "t=");

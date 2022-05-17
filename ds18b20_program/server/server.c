@@ -34,7 +34,9 @@
 #include "sqlite_func.h"
 #include "data_analysis.h"
 #include "ds18b20.h"
+#include "logger.h"
 
+#define DEBUG 1
 
 int run_stop = 0;
 
@@ -52,6 +54,8 @@ int main(int argc, char *argv[])
 	int 					background = 0;
 	int 					epollfd;
 	int 					events;
+	int 					loglevel = LOG_LEVEL_INFO;
+	char 					*logfile = "server.log";
 	char 					*progname;
 	char 					*ptr;
 	char 					buf[256];
@@ -96,13 +100,22 @@ int main(int argc, char *argv[])
 		printf("daemon run...\n");
     	if(daemon(1, 0) < 0)
 		{
-			printf("daemon() failure: %s\n", strerror(errno));
+			log_error("daemon() failure: %s\n", strerror(errno));
 			return -1;
 		}
-		printf("daemon run or not?\n");
 	}
 	
-	openlog("ds18b20_server", LOG_CONS | LOG_PID, 0);	//打开日志系统
+	if(DEBUG)
+	{
+		logfile = "stdout";
+		loglevel = LOG_LEVEL_DEBUG;
+	}
+
+	if( logger_init(logfile, loglevel) < 0 )
+	{
+		fprintf(stderr, "Initial logger file '%s' failure: %s\n", logfile, strerror(errno));
+		return -1;
+	}
 
 	signal(SIGINT, sig_stop);
 	signal(SIGTERM, sig_stop);
@@ -115,23 +128,23 @@ int main(int argc, char *argv[])
 
 	if((listen_fd = socket_server_init(NULL, port)) < 0)
 	{
-		printf("ERROR: %s server listen port[%d] failure.\n", progname, port);
+		log_error("ERROR: %s server listen port[%d] failure.\n", progname, port);
 		goto cleanup;
 	}
 
 	if((epollfd = epoll_create(MAX_EVENTS)) < 0)
 	{
-		printf("epoll_create() failure: %s\n", strerror(errno));
+		log_error("epoll_create() failure: %s\n", strerror(errno));
 		return -1;
 	}
 
-	printf("epollfd: %d\n", epollfd);
+	log_debug("epollfd: %d\n", epollfd);
 	event.data.fd = listen_fd;
 	event.events = EPOLLIN | EPOLLET;
 
 	if(epoll_ctl(epollfd, EPOLL_CTL_ADD, listen_fd, &event) < 0)
 	{
-		printf("epoll_ctl() failure: %s\n", strerror(errno));
+		log_error("epoll_ctl() failure: %s\n", strerror(errno));
 		return -2;
 	}
 	
@@ -141,12 +154,12 @@ int main(int argc, char *argv[])
 	{
 		if((events = epoll_wait(epollfd, event_array, MAX_EVENTS, -1)) < 0)
 		{
-			printf("epoll_wait() failure: %s\n", strerror(errno));
+			log_error("epoll_wait() failure: %s\n", strerror(errno));
 			break;
 		}
 		else if(0 == events)
 		{
-			printf("epoll_wait() get timeout...(it's impossible)\n");
+			log_warn("epoll_wait() get timeout...(it's impossible)\n");
 			continue;
 		}
 		//else events > 0
@@ -154,7 +167,7 @@ int main(int argc, char *argv[])
 		{
 			if((event_array[i].events & EPOLLERR) || (event_array[i].events & EPOLLHUP))
 			{
-				printf("epoll_wait get error on fd[%d]: %s\n", event_array[i].data.fd, strerror(errno));
+				log_error("epoll_wait get error on fd[%d]: %s\n", event_array[i].data.fd, strerror(errno));
 				epoll_ctl(epollfd, EPOLL_CTL_ADD, event_array[i].data.fd, &event);
 				close(event_array[i].data.fd);
 			}
@@ -162,21 +175,21 @@ int main(int argc, char *argv[])
 			{
 				if((client_fd = accept(listen_fd, (struct sockaddr*)NULL, NULL)) < 0)
 				{
-					printf("accept new client failure: %s\n", strerror(errno));
+					log_error("accept new client failure: %s\n", strerror(errno));
 					continue;
 				}
 
-				syslog(LOG_NOTICE, "Program '%s' accept a new client OK!\n", __FILE__);
-				printf("client_fd: %d\n", client_fd);
+				log_info("Program '%s' accept a new client OK!\n", __FILE__);
+				log_debug("client_fd: %d\n", client_fd);
 				event.data.fd = client_fd;
 				event.events = EPOLLIN|EPOLLET;
 				if(epoll_ctl(epollfd, EPOLL_CTL_ADD, client_fd, &event) < 0)
 				{
-					printf("epoll add client socket failure: %s\n", strerror(errno));
+					log_error("epoll add client socket failure: %s\n", strerror(errno));
 					close(event_array[i].data.fd);
 					continue;
 				}
-				printf("epoll add new client socket[%d] ok.\n", client_fd);
+				log_info("epoll add new client socket[%d] ok.\n", client_fd);
 			}
 			else
 			{
@@ -186,13 +199,13 @@ int main(int argc, char *argv[])
 				rv = recv(event_array[i].data.fd, buf, sizeof(buf), 0);
 				if(rv <= 0)
 				{
-					printf("recv() failure or client get disconnected: %s\n", strerror(errno));
+					log_error("recv() failure or client get disconnected: %s\n", strerror(errno));
 					close(event_array[i].data.fd);
 					continue;
 				}
-				printf("%s\n", buf);
+				log_debug("%s\n", buf);
 
-				syslog(LOG_NOTICE, "Program '%s' receive some message from client OK!\n", __FILE__);
+				log_info("Program '%s' receive some message from client OK!\n", __FILE__);
 
 				data_analysis(buf, msg.serial_num, msg.time, &msg.temp); 	 //数据解析到结构体中
 			

@@ -1,7 +1,7 @@
 LIBPATH=/home/chenzhenyu/ds18b20_program/lib
 FNAME=client
 
-all:
+all: clean
 	gcc -I${LIBPATH} ${FNAME}.c -o ${FNAME} -lds18b20 -lsqlite3
 	./${FNAME} -p 7033 -h 127.0.0.1 -t 5  
 

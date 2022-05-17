@@ -53,11 +53,11 @@ int socket_client_init (char *domain_ip, int port)
 
 	if( inet_aton(domain_ip, &serv_addr.sin_addr) == 0 )
 	{
-		printf("--------域名解析...\n");
+		log_debug("--------域名解析...\n");
 
 		if((host = gethostbyname(domain_ip)) == NULL)
 		{
-			printf("gethostbyname error: %s\n", strerror(errno));
+			log_error("gethostbyname error: %s\n", strerror(errno));
 			return -1;
 		}
 		switch(host->h_addrtype)
@@ -66,11 +66,11 @@ int socket_client_init (char *domain_ip, int port)
 			case AF_INET6:
 				pIP = host->h_addr_list;
 				for(; *pIP != NULL; pIP++)
-					printf("IP address:%s\n", inet_ntop(host->h_addrtype, *pIP, str, sizeof(str)));
+					log_debug("IP address:%s\n", inet_ntop(host->h_addrtype, *pIP, str, sizeof(str)));
 				domain_ip = str;
 				break;
 			default:
-				printf("unknown address type\n");
+				log_warn("unknown address type\n");
 				break;
 		}
 	}
@@ -78,10 +78,10 @@ int socket_client_init (char *domain_ip, int port)
 	fd = socket(AF_INET, SOCK_STREAM, 0);
 	if(fd < 0)
 	{
-		printf("create client socket failure:%s\n", strerror(errno));
+		log_error("create client socket failure:%s\n", strerror(errno));
 		return -1;
 	}
-	printf("create client socket[fd:%d] scuess\n",fd);
+	log_info("create client socket[fd:%d] scuess\n",fd);
 
 	memset(&serv_addr, 0, sizeof(serv_addr));
 	serv_addr.sin_family = AF_INET;
@@ -91,7 +91,7 @@ int socket_client_init (char *domain_ip, int port)
 	rv = connect(fd, (struct sockaddr *)&serv_addr, sizeof(serv_addr));
 	if(rv < 0)
 	{
-		printf("connect() failure: %s\n", strerror(errno));
+		log_error("connect() failure: %s\n", strerror(errno));
 		close(fd);
 		fd = -1;
 	}

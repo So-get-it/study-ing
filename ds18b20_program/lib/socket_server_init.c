@@ -25,11 +25,11 @@ int socket_server_init(char *ip, int port)
 	listen_fd = socket(AF_INET, SOCK_STREAM, 0);
 	if(listen_fd < 0)
 	{
-		printf("create socket failure: %s\n", strerror(errno));
+		log_error("create socket failure: %s\n", strerror(errno));
 		return -1;
 	}
 
-	printf("create socket[fd:%d] scuess\n", listen_fd);
+	log_info("create socket[fd:%d] scuess\n", listen_fd);
 
 	setsockopt(listen_fd, SOL_SOCKET, SO_REUSEADDR, &on, sizeof(on));
 	memset(&serv_addr, 0, sizeof(serv_addr));
@@ -47,13 +47,13 @@ int socket_server_init(char *ip, int port)
 
 	if(bind(listen_fd, (struct sockaddr *)&serv_addr, sizeof(serv_addr)) < 0)
 	{
-		printf("bind() port failure: %s\n", strerror(errno));
+		log_error("bind() port failure: %s\n", strerror(errno));
 		return -1;
 	}
 
 	if(listen(listen_fd, 13) < 0)
 	{
-		printf("listen error: %s\n", strerror(errno));
+		log_error("listen error: %s\n", strerror(errno));
 		return -1;
 	}
 

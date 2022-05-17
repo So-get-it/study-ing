@@ -51,7 +51,7 @@ void sqlite_create_table(char *basename, sqlite3 **db)
 	rc = sqlite3_open(basename, db);
 	if( rc )
 	{
-		printf("Can't open database: %s\n", sqlite3_errmsg(*db));
+		log_warn("Can't open database: %s\n", sqlite3_errmsg(*db));
 		return ;
 	}
 
@@ -102,12 +102,12 @@ void sqlite_insert(sqlite3 *db, char *serial_num, char *time, float temp)
 	rc = sqlite3_exec(db, sql, callback, 0, &zErrMsg);
 	if( rc != SQLITE_OK )
 	{
-		printf("SQL error: %s\n", zErrMsg);
+		log_error("SQL error: %s\n", zErrMsg);
 		sqlite3_free(zErrMsg);
 	}
 	else
 	{
-		printf("Records created successfully\n");
+		log_info("Records created successfully\n");
 	}
 	free(sql);
 	return ;
@@ -161,12 +161,12 @@ void sqlite_delete(sqlite3 *db, char *arg)
 	rc = sqlite3_exec(db, sql, callback, 0, &zErrMsg);
 	if( rc != SQLITE_OK )
 	{
-		printf("SQL error: %s\n", zErrMsg);
+		log_error("SQL error: %s\n", zErrMsg);
 		sqlite3_free(zErrMsg);
 	}
 	else
 	{
-		printf("Records delete successfully\n");
+		log_info("Records delete successfully\n");
 	}
 	return ;
 }
@@ -224,7 +224,7 @@ void get_sql_table_firstvalue(sqlite3 *db, char *num, char *time, float *temp)
 		}
 	}
 
-	printf("time: %s\n", num);
+	log_debug("time: %s\n", num);
 
 	sqlite3_free_table( dbResult );
 
@@ -252,10 +252,10 @@ void sqlite_drop_table(sqlite3 *db)
 	/* Execute SQL statement */
 	rc = sqlite3_exec(db, sql, callback, 0, &zErrMsg);
 	if( rc != SQLITE_OK ){
-		fprintf(stderr, "SQL error: %s\n", zErrMsg);
+		log_error("SQL error: %s\n", zErrMsg);
 		sqlite3_free(zErrMsg);
 	}else{
-		fprintf(stdout, "Table drop successfully\n");
+		log_info("Table drop successfully\n");
 	}
 	return ;
 }

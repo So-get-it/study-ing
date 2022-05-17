@@ -37,20 +37,21 @@ time_t get_dtime(char *dtime)
 {
 	time_t 			t = time(NULL);
 	struct tm	 	*p = localtime(&t);
-	char 			*t_buf = NULL;
+	char 			t_buf[32];
 
 	if(!dtime)
 	{
 		log_error("ERROR: Invalid input arguments\n");
 		return -1;
 	}
-	t_buf = (char *)malloc(32);
-	snprintf(t_buf, 64, "%4d-%02d-%02d/%02d:%02d:%02d", p->tm_year+1900, p->tm_mon+1, p->tm_mday, p->tm_hour, p->tm_min, p->tm_sec);
+//	t_buf = (char *)malloc(32);
+	memset(t_buf, 0, 32);
+	snprintf(t_buf, 32, "%4d-%02d-%02d/%02d:%02d:%02d", p->tm_year+1900, p->tm_mon+1, p->tm_mday, p->tm_hour, p->tm_min, p->tm_sec);
 
 	memset(dtime, 0, sizeof(dtime));
 	strncpy(dtime, t_buf, strlen(t_buf));
 
-	free(t_buf);
+//	free(t_buf);
 	return t;
 } 
 

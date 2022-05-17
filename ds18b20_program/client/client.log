@@ -1,52 +1,20 @@
-client : 10:10:37 [INFO ] Sample successfully!
+client : 12:06:16 [INFO ] Sample successfully!
 
-client : 10:10:37 [INFO ] Program 'client.c' connect success!
+client : 12:06:16 [INFO ] create client socket[fd:5] scuess
 
-client : 10:10:37 [INFO ] Program 'client.c' write Sample message to server OK!
+client : 12:06:16 [INFO ] Program 'client.c' connect success!
 
-client : 10:10:43 [INFO ] Sample successfully!
+client : 12:06:16 [INFO ] Program 'client.c' write Sample message to server OK!
 
-client : 10:10:43 [INFO ] Program 'client.c' write Sample message to server OK!
+client : 12:06:21 [INFO ] Sample successfully!
 
-client : 10:10:48 [INFO ] Sample successfully!
+client : 12:06:21 [INFO ] Program 'client.c' write Sample message to server OK!
 
-client : 10:10:48 [INFO ] Program 'client.c' write Sample message to server OK!
+client : 12:06:27 [INFO ] Sample successfully!
 
-client : 10:10:54 [INFO ] Sample successfully!
+client : 12:06:27 [INFO ] Program 'client.c' write Sample message to server OK!
 
-client : 10:10:54 [INFO ] Program 'client.c' write Sample message to server OK!
+client : 12:06:33 [INFO ] Sample successfully!
 
-client : 10:11:00 [INFO ] Sample successfully!
-
-client : 10:11:00 [INFO ] Program 'client.c' write Sample message to server OK!
-
-client : 10:11:06 [INFO ] Sample successfully!
-
-client : 10:11:06 [WARN ] Program 'client.c' maybe disconnected, insert temp message into the table and try to reconnect...
-
-client : 10:11:07 [INFO ] Sample successfully!
-
-client : 10:11:13 [INFO ] Sample successfully!
-
-client : 10:11:19 [INFO ] Sample successfully!
-
-client : 10:11:25 [INFO ] Sample successfully!
-
-client : 10:11:31 [INFO ] Sample successfully!
-
-client : 10:11:35 [INFO ] Program 'client.c' reconnect success,write the table to server OK!
-
-client : 10:11:35 [INFO ] Program 'client.c' write Sample message to server OK!
-
-client : 10:11:37 [INFO ] Sample successfully!
-
-client : 10:11:37 [INFO ] Program 'client.c' write Sample message to server OK!
-
-client : 10:11:42 [INFO ] Sample successfully!
-
-client : 10:11:42 [INFO ] Program 'client.c' write Sample message to server OK!
-
-client : 10:11:47 [INFO ] Sample successfully!
-
-client : 10:11:47 [INFO ] Program 'client.c' write Sample message to server OK!
+client : 12:06:33 [INFO ] Program 'client.c' write Sample message to server OK!
 
