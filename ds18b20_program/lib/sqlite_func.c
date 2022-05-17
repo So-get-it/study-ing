@@ -18,6 +18,7 @@
 #include <sqlite3.h>
 
 #include "sqlite_func.h"
+#include "logger.h"
 
 
 static int callback(void *NotUsed, int argc, char **argv, char **azColName)

@@ -20,32 +20,37 @@
 #include <fcntl.h>
 
 #include "get_time.h"
+#include "logger.h"
 
 
 
 /* 
  * =====================================================================================
- *         Name:  get_time
+ *         Name:  get_dtime
  *  Description:  get date and time now
  *   Input args:  dtime: date and time
  *  Output args:  date/time with (xxxx-xx-xx/xx:xx:xx)
- * return value:  NULL
+ * return value:  time_t t;how many sonecds
  * =====================================================================================
  */
-void get_time(char *dtime)
+time_t get_dtime(char *dtime)
 {
 	time_t 			t = time(NULL);
 	struct tm	 	*p = localtime(&t);
 	char 			*t_buf = NULL;
 
+	if(!dtime)
+	{
+		log_error("ERROR: Invalid input arguments\n");
+		return -1;
+	}
 	t_buf = (char *)malloc(32);
 	snprintf(t_buf, 64, "%4d-%02d-%02d/%02d:%02d:%02d", p->tm_year+1900, p->tm_mon+1, p->tm_mday, p->tm_hour, p->tm_min, p->tm_sec);
 
 	memset(dtime, 0, sizeof(dtime));
-
 	strncpy(dtime, t_buf, strlen(t_buf));
 
 	free(t_buf);
-	return ;
+	return t;
 } 
 

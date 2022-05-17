@@ -26,7 +26,7 @@
  * =====================================================================================
  */
 
-extern void get_time(char *dtime);
+extern time_t get_dtime(char *dtime);
 
 #endif
 

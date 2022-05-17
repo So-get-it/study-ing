@@ -10,6 +10,7 @@
 #include <sys/stat.h>
 
 #include "ds18b20.h"
+#include "logger.h"
 
 
 

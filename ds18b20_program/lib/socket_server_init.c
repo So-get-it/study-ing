@@ -13,6 +13,7 @@
 
 
 #include "socket_server_init.h"
+#include "logger.h"
 
 
 int socket_server_init(char *ip, int port)

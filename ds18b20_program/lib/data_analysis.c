@@ -12,6 +12,7 @@
  ********************************************************************************/
 
 #include "data_analysis.h"
+#include "logger.h"
 
 
 void data_analysis(char *data, char *num, char *time, float *temp)
