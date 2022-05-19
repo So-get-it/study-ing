@@ -66,11 +66,11 @@ time_t get_dtime(char *dtime)
  * return value:  1: time not out    0: timeout
  * =====================================================================================
  */
-int check_timeout(time_t sample_time, int timeout)
+int check_timeout(time_t time_last, int timeout)
 {
 	time_t 			t = time(NULL);
 
-	if((t - sample_time) < timeout)
+	if((t - time_last) >= timeout)
 	{
 		return 1;
 	}
@@ -79,3 +79,6 @@ int check_timeout(time_t sample_time, int timeout)
 		return 0;
 	}
 }
+
+
+

@@ -124,3 +124,34 @@ int SocketConnected(int sock)
 		return 0;	//myprintf("socket disconnected\n");
 	}
 }
+
+
+int socket_write(int sockfd, char *buf)
+{
+	int rv = -1;
+
+	rv = write(sockfd, buf, strlen(buf));
+	if(rv < 0)
+	{
+		return -1;
+	}
+	else
+	{
+		return rv;
+	}
+}
+
+
+void socket_term(int *sockfd)
+{
+	if( !sockfd )
+	{
+		return ;
+	}
+
+	if(*sockfd > 0)
+	{
+		close(*sockfd);
+		*sockfd = -1;
+	}
+}

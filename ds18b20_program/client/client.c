@@ -41,6 +41,7 @@ int run_stop = 0;
 
 void sig_stop(int signum);
 void print_usage(char *program);
+void packet_msg(char *buf_msg, int size, sample_msg_s msg);
 
 int main(int argc, char *argv[])
 {
@@ -51,7 +52,7 @@ int main(int argc, char *argv[])
 	int 					sleep_time;
 	int 					client_fd = -1;
 	int 					background = 0;
-	int 					sample_flag = 0;
+	int 					sample_flag;
 	int 					debug = 1;
 	int 					loglevel = LOG_LEVEL_INFO;
 	char 					*logfile = "client.log";
@@ -59,13 +60,12 @@ int main(int argc, char *argv[])
 	char 					*host = NULL;
 	char 					msg_buf[128];
 	char 					sql_msg_buf[128];
-	time_t 					time_sample;
-	time_t 					time_now;
+	time_t 					time_last = 0;
 	sqlite3 				*db;
 
 	struct sockaddr_in 		serv_addr;
-	struct _get_sample_msg 	msg;
-	struct _get_sample_msg	sql_msg;
+	struct sample_msg_t 	msg;
+	struct sample_msg_t 	sql_msg;
 	struct option 			opts[] = {
 		{"host", required_argument, NULL, 'h'},  //IP地址或域名
 		{"port", required_argument, NULL, 'p'},
@@ -96,6 +96,12 @@ int main(int argc, char *argv[])
 		}
 	}
 
+	if(!port | !host | !sleep_time)
+	{
+		print_usage(argv[0]);
+		return -1;
+	}
+
 	if(debug)
 	{
 		logfile = "stdout";
@@ -122,33 +128,31 @@ int main(int argc, char *argv[])
 	signal(SIGTERM, sig_stop);
 	signal(SIGPIPE, SIG_IGN);
 
-	if(!port | !host | !sleep_time)
-	{
-		print_usage(argv[0]);
-		return -1;
-	}
-
 	sqlite_create_table("get_temp.db", &db);	//创建表
 	memset(msg.serial_num, 0, sizeof(msg.serial_num));
 	strncpy(msg.serial_num, "czy-001", strlen("czy-001"));
 
 	while(!run_stop)
 	{
-		if(get_temperature(&msg.temp) < 0)
+		sample_flag = 0;
+		if(check_timeout(time_last, sleep_time) > 0)
 		{
-			log_error("Sample failure: %s\n", strerror(errno));
-		}
-		else
-		{
-			log_info("Sample successfully!\n");
-			sample_flag = 1; 	//已采样
-		}
-		time_sample = get_dtime(msg.time); 	//采样时间
+			if(get_temperature(&msg.temp) < 0)
+			{
+				log_error("Sample failure: %s\n", strerror(errno));
+			}
+			else
+			{
+				log_info("Sample successfully!\n");
+				sample_flag = 1; 	//已采样
+			}
+			time_last = get_dtime(msg.time); 	//采样时间
 
-		memset(msg_buf, 0, sizeof(msg_buf));
-		snprintf(msg_buf, sizeof(msg_buf), "Serial number: %s ===Date-Time: %s ===Temperature: %.2f", msg.serial_num, msg.time, msg.temp);
+			packet_msg(msg_buf, sizeof(msg_buf), msg);
+		}
 
-		/*first connect*/
+
+		/*connect server*/
 		if(client_fd < 0)
 		{
 			if((client_fd = socket_client_init(host, port)) > 0)
@@ -157,99 +161,69 @@ int main(int argc, char *argv[])
 			}
 		}
 
-		while( check_timeout(time_sample, sleep_time) ) 	//没有超过采样间隔时间
+		/*check socket connected or not*/
+		rv = SocketConnected(client_fd);
+		if(rv == 0) 	//socket disconnected
 		{
-			/*if disconnect*/
-			if(client_fd < 0)
-			{
-				if((client_fd = socket_client_init(host, port)) > 0)
-				{
-					log_info("Program '%s' reconnect success,write the table to server OK!\n", __FILE__);
-				}
-			}
-
 			if(client_fd > 0)
 			{
-				if(sample_flag) 	//有采样值
-				{
-					rv = SocketConnected(client_fd); 	//判断socket是否断开
-					if(rv == 0) 	//socket断开
-					{
+				log_error("Program '%s' maybe disconnected, insert temp message into the table and try to reconnect...\n", __FILE__);
+				socket_term(&client_fd);
+			}
+		}
 
-						log_warn("Program '%s' maybe disconnected, insert temp message into the table and try to reconnect...\n", __FILE__);
-
-						sqlite_insert(db, msg.serial_num, msg.time, msg.temp);	//socket断开,记录到表中
-
-						close(client_fd);
-						client_fd = -1;
-					}
-					else
-					{
-						rv = write(client_fd, msg_buf, strlen(msg_buf));
-						if(rv < 0)
-						{
-							log_error("Sample values write failure:%s\n", strerror(errno));
-							sqlite_insert(db, msg.serial_num, msg.time, msg.temp);	//写失败,记录到表中
-
-							close(client_fd);
-							client_fd = -1;
-						}
-						else
-						{
-							log_info("Program '%s' write Sample message to server OK!\n", __FILE__);
-						}
-						log_debug("Write Sample Msg: \n%s\n", msg_buf);
-					}
-
-					sample_flag = 0; 	//采样值已处理
-				}
-
-				if(!sample_flag) 	//无采样值
-				{
-					rv = sqlite_data_row(db); 	//读表中有没有数据
-					if(rv > 0) 	
-					{
-						get_sql_table_firstvalue(db, sql_msg.serial_num, sql_msg.time, &sql_msg.temp);	//获取第一组数据
-
-						memset(sql_msg_buf, 0, sizeof(sql_msg_buf));
-						snprintf(sql_msg_buf, sizeof(sql_msg_buf), "Serial number: %s ===Date-Time: %s ===Temperature: %.2f", sql_msg.serial_num, sql_msg.time, sql_msg.temp);
-
-						log_debug("table: %s\n", sql_msg_buf);
-						rv = write(client_fd, sql_msg_buf, strlen(sql_msg_buf));
-						if(rv > 0) 	//如果发送成功
-						{
-							sqlite_delete(db, sql_msg.time);	//写完依据时间删除表数据
-						}
-						else
-						{
-							close(client_fd);
-							client_fd = -1;
-							break;
-						}
-					}
-				}
+		if(client_fd < 0)
+		{
+			if(sample_flag)
+			{
+				sqlite_insert(db, msg.serial_num, msg.time, msg.temp);	//写失败,记录到表中
 			}
 
 			sleep(1);
-
+			continue;
 		}
+
 		if(sample_flag)
 		{
-			sqlite_insert(db, msg.serial_num, msg.time, msg.temp);	//网络一直处于断开状态，有采样值，记录到表中
+			if(socket_write(client_fd, msg_buf) < 0)
+			{
+				log_error("Sample values write failure: %s\n", strerror(errno));
 
-			sample_flag = 0;
+				socket_term(&client_fd);
+			}
+			else
+			{
+				log_info("Program '%s' write Sample message to server OK!\n", __FILE__);
+			}
+			log_debug("Write Sample Msg: \n%s\n", msg_buf);
 		}
+
+		if(sqlite_data_row(db) > 0)  //数据库中有数据
+		{
+			get_sql_table_firstvalue(db, msg.serial_num, msg.time, &msg.temp);	//获取第一组数据
+
+			packet_msg(msg_buf, sizeof(msg_buf), msg);
+
+			log_debug("table: %s\n", msg_buf);
+			if(socket_write(client_fd, msg_buf) > 0) 	//如果发送成功
+			{
+				sqlite_delete(db, msg.time);	//写完依据时间删除表数据
+			}
+			else
+			{
+				socket_term(&client_fd);
+				break;
+			}
+		}
+
+		sleep(1);
 	}
 
-	if(1 == run_stop)	//想要结束进程时，关闭套接字、删除表、关闭日志系统
-	{
-		close(client_fd);
-		sqlite3_close(db);
+	close(client_fd);
+	sqlite3_close(db);
 
-		log_info("Program '%s' stop running\n", __FILE__);
-		closelog();
-	}
-
+	log_info("Program '%s' stop running\n", __FILE__);
+	closelog();
 }
 
 
@@ -266,4 +240,11 @@ void print_usage(char *program)
     printf("-p(--port): sepcify server port\n");
     printf("-t(--time): dwell time in second\n");
     printf("-b(--daemon): without arguments\n");
+}
+
+void packet_msg(char *buf_msg, int size, sample_msg_s msg)
+{
+	memset(buf_msg, 0, size);
+	snprintf(buf_msg, size, "Serial number: %s ===Date-Time: %s ===Temperature: %.2f", msg.serial_num, msg.time, msg.temp);
+
 }

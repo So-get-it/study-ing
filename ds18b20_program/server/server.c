@@ -61,7 +61,7 @@ int main(int argc, char *argv[])
 	char 					t_buf[8];
 	sqlite3 				*db;
 
-	sample_msg  			msg;
+	sample_msg_s  			msg;
 	struct sockaddr_in      cli_addr;
 	struct epoll_event      event;
 	struct epoll_event      event_test[MAX_EVENTS];

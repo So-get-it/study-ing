@@ -37,5 +37,8 @@ extern int socket_client_init(char *domain_ip, int port);
  */
 extern int SocketConnected(int sock);
 
+extern int socket_write(int sockfd, char *buf);
+
+extern void socket_term(int *sockfd);
 
 #endif

@@ -3,7 +3,7 @@ FNAME=client
 
 all: clean
 	gcc -I${LIBPATH} ${FNAME}.c -o ${FNAME} -lds18b20 -lsqlite3
-	./${FNAME} -p 7033 -h 127.0.0.1 -t 600 -b
+	./${FNAME} -p 7033 -h 127.0.0.1 -t 150 -b
 
 run:
 	./${FNAME} -p 7033 -h master.iot-yun.club -t 5

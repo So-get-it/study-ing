@@ -15,12 +15,12 @@
 #ifndef _SAMPLE_H_
 #define _SAMPLE_H_
 
-typedef struct _get_sample_msg
+typedef struct sample_msg_t
 {
     char    serial_num[32];
     char    time[64];
     float   temp;
-}sample_msg;
+}sample_msg_s;
 
 #endif
 

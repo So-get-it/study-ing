@@ -40,7 +40,7 @@ extern time_t get_dtime(char *dtime);
  * return value:  1: time not out    0: timeout
  * =====================================================================================
  */
-extern int check_timeout(time_t sample_time, int timeout);
+extern int check_timeout(time_t time_last, int timeout);
 
 #endif
 
