@@ -1,8 +1,11 @@
 #include <stdio.h>
 #include <sys/types.h>
 #include <sys/stat.h>
+#include <signal.h>
+#include <stdlib.h>
 #include <fcntl.h>
 #include <unistd.h>
+#include <getopt.h>
 #include <errno.h>
 #include <string.h>
 #include <termios.h>
@@ -11,7 +14,7 @@
 #define SERIAL_DEBUG
 
 #ifdef SERIAL_DEBUG
-#define serial_print(foriat, args...) printf(format,##args)
+#define serial_print(format, args...) printf(format,##args)
 #else
 #define serial_print(format, args...) do{} while(0)
 #endif
@@ -21,14 +24,15 @@ void usage();
 
 int run_stop = 0;
 
-int main()
+int main(int argc, char **argv)
 {
-    int 				fd, rv;
-    char 				*fname = "/dev/ttyUSB2"; // 设备节点
+    int 				fd, rv, ch;
+    char 				*fname = "/dev/ttyUSB5"; // 设备节点
     char 				buf[64] = {0};
 	char 				send_msg[128];
 	char 				recv_msg[128];
 	fd_set 				fdset;
+	attr_t 				attr;
     struct termios 		oldtio;
 
     
@@ -52,23 +56,23 @@ int main()
                 return 0;
 
             case 'f':
-                attr->flow_strl = atoi(optarg);
+                attr.flow_ctrl = atoi(optarg);
                 break;
 
             case 'b':
-                attr->baud_rate = atoi(optarg);
+                attr.baud_rate = atoi(optarg);
                 break;
 
             case 'd':
-                attr->data_bits = atoi(optarg);
+                attr.data_bits = atoi(optarg);
                 break;
 
             case 'p':
-                attr->parity = optarg;
+                attr.parity = *optarg;
                 break;
 
             case 's':
-                attr->stop_bits = atoi(optarg);
+                attr.stop_bits = atoi(optarg);
                 break;
         }
     }
@@ -78,7 +82,7 @@ int main()
         return -1;
     }
 
-	if(serial_init(fd, &oldtio, attr) < 0)
+	if(serial_init(fd, &oldtio, &attr) < 0)
 	{
 		return -2;
 	}
@@ -130,6 +134,8 @@ int main()
                 serial_print("Write failed.\n");
                 goto cleanup;
             }
+
+			serial_print("INFO:------------Write success!\n");
             //fflush(stdin);
 
         }
@@ -138,22 +144,22 @@ int main()
         {
             memset(recv_msg, 0, sizeof(recv_msg));
 
-            rv = serial_recv(fd, recv_msg);
+            rv = serial_recv(fd, recv_msg, sizeof(recv_msg));
             if(rv <= 0)
             {
                 serial_print("Read failed: %s\n",strerror(errno));
                 break;
             }
 
-            serial_print("Receive data: %s",recv_msg);
+            serial_print("Receive %d bytes data: %s",rv, recv_msg);
             //fflush(stdout);
         }
 
-
+		sleep(5);
     }
     
 cleanup:
-    close(fd);
+    serial_close(fd, &oldtio);
 
 	return 0;
 }

@@ -13,9 +13,9 @@ typedef struct attr_s{
 
 extern int serial_open(char *fname);
 extern int serial_close(int fd, struct termios *termios_p);
-extern int serial_init(int fd, struct termios *oldtermios, attr_t attr);
+extern int serial_init(int fd, struct termios *oldtermios, attr_t *attr);
 extern int serial_send(int fd, char *msg, int msg_len);
-extern int serial_recv(int fd, char *recv_msg);
+extern int serial_recv(int fd, char *recv_msg, int size);
 
 #endif
 

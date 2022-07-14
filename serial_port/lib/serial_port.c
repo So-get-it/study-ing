@@ -7,6 +7,7 @@
 #include <sys/stat.h>
 #include <errno.h>
 #include <fcntl.h>
+#include "serial_port.h"
 
 
 int serial_open(char *fname)
@@ -26,7 +27,7 @@ int serial_open(char *fname)
         return -1;
     }
 
-    /* 判断串口的状态是否处于阻塞态 */
+    /* 判断串口的状态是否处于阻塞态 
     if((rv = fcntl(fd, F_SETFL, 0)) < 0)
     {
         printf("fcntl failed!\n");
@@ -37,7 +38,7 @@ int serial_open(char *fname)
     {
         printf("fcntl=%d\n",rv);
     }
-
+*/
     if(0 == isatty(fd))  //是否为终端设备
     {
         printf("%s:[%d] is not a Terminal equipment.\n", fname, fd);
@@ -67,11 +68,12 @@ int serial_close (int fd, struct termios *termios_p)
     }
 
     close(fd);
+	printf("close OK..............");
 
     return 0;
 } 
 
-int serial_init(int fd, struct termios *oldtermios, attr_t attr)
+int serial_init(int fd, struct termios *oldtermios, struct attr_s  *attr)
 {
     char                  baudrate[32] = {0};
     struct termios        newtermios;
@@ -92,13 +94,13 @@ int serial_init(int fd, struct termios *oldtermios, attr_t attr)
         return -2;
     }
 
-    /* 先获取默认属性，后在此基础上修改 
+    /* 先获取默认属性，后在此基础上修改 */
     if(tcgetattr(fd, &newtermios))
     {
         printf("%s, get termios to newtermios failure:%s\n",__func__,strerror(errno));
         return -3;
     }
-    */
+    
 
     /* 修改控制模式，保证程序不会占用串口 */
     newtermios.c_cflag |= CLOCAL;
@@ -140,7 +142,7 @@ int serial_init(int fd, struct termios *oldtermios, attr_t attr)
             break;
 
         case 1:                         //使用硬件流控制
-            newtermios.c_cflag |= CRTSCTs;
+            newtermios.c_cflag |= CRTSCTS;
             break;
 
         case 2:                         //使用软件流控制
@@ -155,7 +157,7 @@ int serial_init(int fd, struct termios *oldtermios, attr_t attr)
     /* 设置波特率，否则默认设置其为B115200 */
     if(attr->baud_rate)
     {
-        sprintf(baudrate,"B%d",attr->BaudRate);
+        sprintf(baudrate,"B%d",attr->baud_rate);
 
         cfsetispeed(&newtermios, (int)baudrate); //设置输入输出波特率
         cfsetospeed(&newtermios, (int)baudrate);
@@ -254,7 +256,7 @@ int serial_init(int fd, struct termios *oldtermios, attr_t attr)
     newtermios.c_cc[VTIME] = 0;  //最长等待时间
     newtermios.c_cc[VMIN] = 0;  //最小接收字符
 
-    attr->mSend_Len = 128;  //若命令长度大于mSend_Len,则每次最多发送为mSend_Len
+    //attr->mSend_Len = 128;  //若命令长度大于mSend_Len,则每次最多发送为mSend_Len
 
     /* 刷新串口缓冲区 / 如果发生数据溢出，接收数据，但是不再读取*/
     if(tcflush(fd,TCIFLUSH))
@@ -280,7 +282,7 @@ int serial_send (int fd, char *msg, int msg_len)
     int rv = 0;
 
     rv = write(fd, msg, msg_len);
-    if(rv == data_len)
+    if(rv == msg_len)
     {
         return rv;
     }
@@ -294,11 +296,12 @@ int serial_send (int fd, char *msg, int msg_len)
     return rv;
 } 
 
-int serial_recv(int fd, char *recv_msg)
+int serial_recv(int fd, char *recv_msg, int size)
 {
     int                 len, rv;
     fd_set              rdset;
-    struct timeval      time;
+
+	/*struct timeval      time;
 
     FD_ZERO(&rdset);
     FD_SET(fd, &rdset);
@@ -308,11 +311,12 @@ int serial_recv(int fd, char *recv_msg)
 
     //使用select实现串口的多路通信
     rv = select(fd+1,&rdset,NULL,NULL,&time);
+	*/
+
+    rv = read(fd, recv_msg, size);
     if(rv)
     {
-        len = read(fd, recv_msg, msg_len);
-
-        return len;
+        return rv;
     }
     else
     {
