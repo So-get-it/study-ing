@@ -109,6 +109,8 @@ int serial_init(int fd, struct termios *oldtermios, struct attr_s  *attr)
     /* 启动接收器，能够从串口中读取输入数据 */
     newtermios.c_cflag |= CREAD;
 
+	/* 将\n转换成\r */
+	newtermios.c_oflag |= ONLCR;
 
 
     /*
