@@ -4,6 +4,16 @@
 #include "logger.h"
 
 
+/* 
+ * =====================================================================================
+ *         Name:  kill_process
+ *  Description:  Find the process number of the process associated with the parameter and terminate
+ *   Input args:  procs: The string associated with the process
+ *  Output args:
+ * return value:  0    success
+ *                -1   failure
+ * =====================================================================================
+ */
 int kill_process (const char *procs)
 {
 	int             retval, pid;

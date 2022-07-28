@@ -228,7 +228,7 @@ int check_all_right (int fd)
  *  Output args:  char *mcc
  *                char *mnc
  * return value:  0    success
- *                <0   failure
+ *                -1   failure
  * =====================================================================================
  */
 int get_mcc_mnc (int fd, char *mcc, char *mnc)
@@ -290,7 +290,7 @@ int get_mcc_mnc (int fd, char *mcc, char *mnc)
  *                apn: an apn string
  *  Output args:  
  * return value:  <0   failure
- *                >=0  success
+ *                else  success
  * =====================================================================================
  */
 int set_apn (int fd, const char *apn)
