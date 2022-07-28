@@ -1,5 +1,5 @@
-LIBPATH=/home/nbiot/chenzhenyu/serial_port/lib/
-LD_LIBRARY_PATH=/home/nbiot/chenzhenyu/serial_port/lib/
+LIBPATH=/home/nbiot/chenzhenyu/4G_pppd/lib/
+LD_LIBRARY_PATH=/home/nbiot/chenzhenyu/4G_pppd/lib/
 FNAME=ttyUSBN
 
 all: clean

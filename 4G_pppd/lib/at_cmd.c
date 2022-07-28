@@ -266,7 +266,6 @@ int get_mcc_mnc (int fd, char *mcc, char *mnc)
 } 
 
 
-
 int set_apn (int fd, const char *apn)
 {
 	int 		retval;

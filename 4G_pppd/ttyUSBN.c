@@ -4,6 +4,7 @@
 #include "serial_port.h"
 #include "logger.h"
 #include "parse_apn.h"
+#include "kill_process.h"
 #include "get_network_status.h"
 #include "at_cmd.h"
 
@@ -29,8 +30,9 @@ typedef struct p_lock_s
 }p_lock_t;
 
 
-void *thread_pppd(void *args);
+//void *thread_pppd(void *args);
 void *thread_ping(void *args);
+void *thread_kill(void *args);
 
 
 void sig_stop(int signum);
@@ -121,7 +123,7 @@ int main(int argc, char **argv)
 	if(debug)
 	{
 		logfile = "stdout";
-		//loglevel = LOG_LEVEL_DEBUG;
+		loglevel = LOG_LEVEL_DEBUG;
 	}
 
 
@@ -146,7 +148,7 @@ int main(int argc, char **argv)
 
 
 	signal(SIGINT, sig_stop);
-	signal(SIGTERM, sig_stop);
+	//signal(SIGTERM, sig_stop);
 
 
 	/* Initialize a thread property object */
@@ -175,6 +177,10 @@ int main(int argc, char **argv)
 
 	//创建第一个子线程，设置为相分离状态
     pthread_create(&tid1, &thread_attr, thread_ping, &lock_ctx);
+    log_info("Thread worker1 tid[%ld] created ok\n", tid1);
+
+	//创建第二个子线程，设置为相分离状态
+    pthread_create(&tid1, &thread_attr, thread_kill, &lock_ctx);
     log_info("Thread worker1 tid[%ld] created ok\n", tid1);
 
 
@@ -333,6 +339,57 @@ int main(int argc, char **argv)
 	logger_term();
 
 	return 0;
+}
+
+
+
+void *thread_kill(void *args)
+{
+	int 	rate, rv;
+
+	p_lock_t *kill = (p_lock_t *)args;
+
+
+	while(!run_stop)
+	{
+
+		pthread_mutex_lock(&kill->lock);
+		log_debug("%s get lock and start running...\n", __func__);
+
+		rv = check_netcard_exist("ppp0");
+		if(rv == 0)
+		{
+			log_debug("ppp0 exist or not(0-yes/1-no): %d\n", rv);
+			
+			rate = get_netstat("eth0");
+			if(rate < 0)
+			{
+				log_error("Get \"eth0\" network status failure!\n");
+
+				pthread_exit(NULL);
+			}
+			else if(rate == 0)
+			{
+				log_info("\"eth0\" in good condition!\n ");
+
+				//get_pid("pppd");
+				kill_process("pppd");
+			}
+			else
+			{
+				/*  The network card does not exist*/
+				;
+			}
+		}
+
+		pthread_mutex_unlock(&kill->lock);
+		
+		log_debug("%s get UNLOCK and stop running...\n", __func__);
+		
+		sleep(3);
+	}
+
+	pthread_exit(NULL);
 }
 
 
