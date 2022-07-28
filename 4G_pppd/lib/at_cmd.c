@@ -217,6 +217,20 @@ int check_all_right (int fd)
 } 
 
 
+
+/* 
+ * =====================================================================================
+ *         Name:  get_mcc_mnc
+ *  Description:  To send AT command to get a number which include mcc number and mnc numer.
+ *
+ *   Input args:  fd: Serial port file descriptor
+ *
+ *  Output args:  char *mcc
+ *                char *mnc
+ * return value:  0    success
+ *                <0   failure
+ * =====================================================================================
+ */
 int get_mcc_mnc (int fd, char *mcc, char *mnc)
 {
 	int 			rv, i;
@@ -266,6 +280,19 @@ int get_mcc_mnc (int fd, char *mcc, char *mnc)
 } 
 
 
+
+
+/* 
+ * =====================================================================================
+ *         Name:  set_apn
+ *  Description:  Send an AT command to set APN(Access Point Name)
+ *   Input args:  fd: Serial port file descriptor
+ *                apn: an apn string
+ *  Output args:  
+ * return value:  <0   failure
+ *                >=0  success
+ * =====================================================================================
+ */
 int set_apn (int fd, const char *apn)
 {
 	int 		retval;
