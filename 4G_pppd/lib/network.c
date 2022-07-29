@@ -314,3 +314,52 @@ int switch_network_del (char *netname, int metric)
 
 	return 0;
 } 
+
+
+
+
+int get_working_netname (char *netname, int size, int metric)
+{
+	FILE        *fp;
+	char 		*ptr;
+	char 		*phead;
+	char 		*ptail;
+	char 		msg[128] = {0};
+	char 		*mtrc = (char *)metric;
+
+
+	if((fp = popen("ip route", "r")) == NULL)
+    {
+    	log_error("%s popen() failure: %s\n", __func__, strerror(errno));
+        return -1;
+    }
+
+
+	while(fgets(msg, sizeof(msg), fp))
+    {
+		if(strstr(msg, mtrc))
+		{
+			ptr = strstr(msg, "dev");
+
+			ptr += strlen("dev");
+
+			while(isblank(*ptr))
+			{
+				ptr++;
+			}
+			phead = ptr;
+
+			while(!isblank(*ptr))
+			{
+				ptr++;
+			}
+			ptail = ptr;
+
+			snprintf(netname, size, phead, ptail-phead);
+
+		}
+	}
+
+	return 0;
+} 
+

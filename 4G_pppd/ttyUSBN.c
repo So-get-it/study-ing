@@ -204,49 +204,65 @@ int main(int argc, char **argv)
 		
 		if(lock_ctx.pppd_enabled == 1)
 		{
-			/* Check AT command is available and the SIM card is normal */
-
-			rv = check_all_right(attr.fd);
-			if(rv < 0)
+			rv = check_netcard_exist("ppp0");
+			if(rv == 1) 	//ppp0 not exist
 			{
-				log_error("check_all_right() check something error!!!");
+				/* Check AT command is available and the SIM card is normal */
+				rv = check_all_right(attr.fd);
+				if(rv < 0)
+				{
+					log_error("check_all_right() check something error!!!");
+				}
+
+
+				/*----------- Set the APN------------ */
+
+				rv = get_mcc_mnc(attr.fd, mcc, mnc);
+				if(rv < 0)
+				{
+					log_error("get_mcc_mnc() failure!!!");
+				}
+
+
+				rv = parse_apn(APNS_XML, mcc, mnc, apn);
+				if(rv < 0)
+				{
+					log_error("parse_apn failure!!!");
+				}
+
+
+				log_debug("The apn: %s\n", apn);
+
+
+				rv = set_apn(attr.fd, apn);
+				if(rv < 0)
+				{
+					log_error("set_apn failure!!!");
+				}
+
+				/* dial-up */
+				system("sudo pppd call rasppp");
+
+				log_info("\"sudo pppd call rasppp\" process start running\n");
+
+				switch_network_add("ppp0", lock_ctx.metric);
+
+				lock_ctx.ppp0_flag = 1;
+				lock_ctx.eth0_flag = 0;
+				lock_ctx.wwan0_flag = 0;
+
+				lock_ctx.pppd_enabled = 0;
 			}
-
-
-			/*----------- Set the APN------------ */
-
-			rv = get_mcc_mnc(attr.fd, mcc, mnc);
-			if(rv < 0)
+			else if(rv == 0) 	//ppp0 exist
 			{
-				log_error("get_mcc_mnc() failure!!!");
+				switch_network_add("ppp0", lock_ctx.metric);
+
+				lock_ctx.ppp0_flag = 1;
+				lock_ctx.eth0_flag = 0;
+				lock_ctx.wwan0_flag = 0;
+
+				lock_ctx.pppd_enabled = 0;
 			}
-
-
-			rv = parse_apn(APNS_XML, mcc, mnc, apn);
-			if(rv < 0)
-			{
-				log_error("parse_apn failure!!!");
-			}
-
-
-			log_debug("The apn: %s\n", apn);
-
-
-			rv = set_apn(attr.fd, apn);
-			if(rv < 0)
-			{
-				log_error("set_apn failure!!!");
-			}
-
-			/* dial-up */
-			system("sudo pppd call rasppp");
-			
-			log_info("\"sudo pppd call rasppp\" process start running\n");
-
-			switch_network_add("ppp0", lock_ctx.metric);
-
-			lock_ctx.ppp0_flag = 1;
-			lock_ctx.pppd_enabled = 0;
 		}
 
 		pthread_mutex_unlock(&lock_ctx.lock);
@@ -467,6 +483,10 @@ void *thread_ping(void *args)
 			}
 			else
 			{
+
+				ping->pppd_enabled = 1;
+
+#if 0
 				/*  The network card does not exist*/
 				rv = check_netcard_exist("ppp0");
 
@@ -478,6 +498,8 @@ void *thread_ping(void *args)
 				}
 
 				ping->eth0_flag = 0;
+
+#endif
 			}
 		}
 
@@ -490,6 +512,61 @@ void *thread_ping(void *args)
 
 	pthread_exit(NULL);
 }
+
+
+
+#if 0
+void *thread_kill(void *args)
+{
+	int 	rate, rv;
+
+	p_lock_t *kill = (p_lock_t *)args;
+
+
+	while(!run_stop)
+	{
+
+		pthread_mutex_lock(&kill->lock);
+		log_debug("%s get lock and start running...\n", __func__);
+
+		rv = check_netcard_exist("ppp0");
+		if(rv == 0)
+		{
+			log_debug("ppp0 exist or not(0-yes/1-no): %d\n", rv);
+			
+			rate = get_netstat("eth0");
+			if(rate < 0)
+			{
+				log_error("Get \"eth0\" network status failure!\n");
+
+				pthread_exit(NULL);
+			}
+			else if(rate == 0)
+			{
+				log_info("\"eth0\" in good condition!\n ");
+
+				//get_pid("pppd");
+				kill_process("pppd");
+			}
+			else
+			{
+				/*  The network card does not exist*/
+				;
+			}
+		}
+
+		pthread_mutex_unlock(&kill->lock);
+		
+		log_debug("%s get UNLOCK and stop running...\n", __func__);
+		
+		sleep(3);
+	}
+
+	pthread_exit(NULL);
+}
+
+#endif
+
 
 
 #if 0

@@ -26,4 +26,5 @@ extern int switch_network_add (char *netname, int metric);
 
 extern int switch_network_del (char *netname, int metric);
 
+extern int get_working_netname (char *netname, int size, int metric);
 #endif
