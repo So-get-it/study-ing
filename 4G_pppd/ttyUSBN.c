@@ -25,7 +25,10 @@
 
 typedef struct p_lock_s
 {
-    int                     flag;
+    int                     pppd_enabled;
+    int                     eth0_flag;
+    int                     wwan0_flag;
+    int                     ppp0_flag;
     pthread_mutex_t         lock;
 }p_lock_t;
 
@@ -43,7 +46,7 @@ int run_stop = 0;
 
 int main(int argc, char **argv)
 {
-	int	                rv, ch;
+	int	                rv, ch, metric;
 	//char                buf[1024] = {0};
 	int 				loglevel = LOG_LEVEL_INFO;
 	int 				debug = 1;
@@ -62,7 +65,11 @@ int main(int argc, char **argv)
     p_lock_t      		lock_ctx;
 	
 
-	lock_ctx.flag = 0;
+	lock_ctx.eth0_flag = 1;
+	lock_ctx.wwan0_flag = 0;
+	lock_ctx.ppp0_flag = 0;
+	lock_ctx.pppd_enabled = 0;
+
 	pthread_mutex_init(&lock_ctx.lock, NULL);
 
 	
@@ -184,13 +191,14 @@ int main(int argc, char **argv)
     log_info("Thread worker1 tid[%ld] created ok\n", tid1);
 
 
+	/* pppd call rasppp */
 	while(!run_stop)
 	{
 		pthread_mutex_lock(&lock_ctx.lock);
 
 		log_debug("Pppd call get lock and start running...\n");
 		
-		if(lock_ctx.flag == 1)
+		if(lock_ctx.pppd_enabled == 1)
 		{
 			/* Check AT command is available and the SIM card is normal */
 
@@ -226,11 +234,16 @@ int main(int argc, char **argv)
 				log_error("set_apn failure!!!");
 			}
 
+			/* dial-up */
 			system("sudo pppd call rasppp");
 			
 			log_info("\"sudo pppd call rasppp\" process start running\n");
 
-			lock_ctx.flag = 0;
+			get_min_metric(&metric);
+			switch_network_add("ppp0", metric);
+
+			lock_ctx.ppp0_flag = 1;
+			lock_ctx.pppd_enabled = 0;
 		}
 
 		pthread_mutex_unlock(&lock_ctx.lock);
@@ -427,7 +440,7 @@ void *thread_ping(void *args)
 
 			if(rv == 1) 	//not exist
 			{
-				ping->flag = 1;
+				ping->pppd_enabled = 1;
 			}
 		}
 
@@ -453,7 +466,7 @@ void *thread_pppd(void *args)
 	{
 		pthread_mutex_lock(&pppd->lock);
 
-		if(pppd->flag == 1)
+		if(pppd->pppd_enabled == 1)
 		{
 			/* Check AT command is available and the SIM card is normal */
 
@@ -491,7 +504,7 @@ void *thread_pppd(void *args)
 
 			system("sudo pppd call rasppp");
 
-			pppd->flag = 0;
+			pppd->pppd_enabled = 0;
 		}
 
 		pthread_mutex_unlock(&pppd->lock);

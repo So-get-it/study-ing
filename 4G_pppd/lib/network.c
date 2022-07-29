@@ -2,7 +2,7 @@
 
 
 #include "logger.h"
-#include "get_network_status.h"
+#include "network.h"
 
 /* 
  * =====================================================================================
@@ -222,3 +222,95 @@ int check_netcard_exist (char *netname)
 
 } 
 
+
+
+
+int get_min_metric (int *min_metric)
+{
+	int 		got_metric;
+	FILE        *fp;
+	char 		*ptr;
+	char 		*phead;
+	char 		*ptail;
+	char 		metric[8] = {0};
+	char 		msg[256] = {0};
+
+	*min_metric = 9999;
+
+	if((fp = popen("ip route", "r")) == NULL)
+    {
+    	log_error("%s popen() failure: %s\n", __func__, strerror(errno));
+        return -1;
+    }
+
+
+	while(fgets(msg, sizeof(msg), fp))
+    {
+		log_debug("IP ROUTE buf: %s\n", msg);
+
+		if(strstr(msg, "metric"))
+		{
+			log_debug("msg: %s\n", msg);
+
+			ptr = strstr(msg, "metric");
+
+			ptr += strlen("metric");
+
+			while(isblank(*ptr))
+			{
+				ptr++;
+			}
+			phead = ptr;
+
+			while(!isblank(*ptr))
+			{
+				ptr++;
+			}
+			ptail = ptr;
+
+			snprintf(metric, sizeof(metric), phead, ptail-phead);
+
+			got_metric = atoi(metric);
+
+			if(got_metric < *min_metric)
+			{
+				*min_metric = got_metric;
+			}
+			
+		}
+	}
+	
+	(*min_metric)--;
+
+	pclose(fp);
+	return 0;
+} 
+
+
+
+
+int switch_network_add (char *netname, int metric)
+{
+	char 		buf[128] = {0};
+
+
+	snprintf(buf, sizeof(buf), "sudo ip route add default dev %s  metric %d", netname, metric);
+
+	system(buf);
+
+	return 0;
+} 
+
+
+
+int switch_network_del (char *netname, int metric)
+{
+	char 		buf[128] = {0};
+
+
+	snprintf(buf, sizeof(buf), "sudo ip route del default dev %s  metric %d", netname, metric);
+
+	system(buf);
+
+	return 0;
+} 

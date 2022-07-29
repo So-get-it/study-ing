@@ -20,5 +20,10 @@ extern int get_netstat(char *netname);
 
 extern int check_netcard_exist(char *netname);
 
+extern int get_min_metric (int *min_metric);
+
+extern int switch_network_add (char *netname, int metric);
+
+extern int switch_network_del (char *netname, int metric);
 
 #endif
