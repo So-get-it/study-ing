@@ -5,7 +5,7 @@
 #include "logger.h"
 #include "parse_apn.h"
 #include "kill_process.h"
-#include "get_network_status.h"
+#include "network.h"
 #include "at_cmd.h"
 
 
@@ -241,28 +241,19 @@ int main(int argc, char **argv)
 				}
 
 				/* dial-up */
-				system("sudo pppd call rasppp");
+				system("sudo pppd call rasppp &");
 
 				log_info("\"sudo pppd call rasppp\" process start running\n");
 
-				switch_network_add("ppp0", lock_ctx.metric);
-
-				lock_ctx.ppp0_flag = 1;
-				lock_ctx.eth0_flag = 0;
-				lock_ctx.wwan0_flag = 0;
-
-				lock_ctx.pppd_enabled = 0;
 			}
-			else if(rv == 0) 	//ppp0 exist
-			{
-				switch_network_add("ppp0", lock_ctx.metric);
+			//ppp0 exist or pppd success
+			switch_network_add("ppp0", lock_ctx.metric);
 
-				lock_ctx.ppp0_flag = 1;
-				lock_ctx.eth0_flag = 0;
-				lock_ctx.wwan0_flag = 0;
+			lock_ctx.ppp0_flag = 1;
+			lock_ctx.eth0_flag = 0;
+			lock_ctx.wwan0_flag = 0;
 
-				lock_ctx.pppd_enabled = 0;
-			}
+			lock_ctx.pppd_enabled = 0;
 		}
 
 		pthread_mutex_unlock(&lock_ctx.lock);
@@ -377,44 +368,62 @@ int main(int argc, char **argv)
 
 void *thread_kill(void *args)
 {
-	int 	rate, rv;
+	//int 	rate, rv;
 
-	p_lock_t *kill = (p_lock_t *)args;
+	p_lock_t *k_lock = (p_lock_t *)args;
 
 
 	while(!run_stop)
 	{
-
-		pthread_mutex_lock(&kill->lock);
+		pthread_mutex_lock(&k_lock->lock);
 		log_debug("%s get lock and start running...\n", __func__);
 
-		rv = check_netcard_exist("ppp0");
-		if(rv == 0)
-		{
-			log_debug("ppp0 exist or not(0-yes/1-no): %d\n", rv);
-			
-			rate = get_netstat("eth0");
-			if(rate < 0)
-			{
-				log_error("Get \"eth0\" network status failure!\n");
 
-				pthread_exit(NULL);
-			}
-			else if(rate == 0)
+		/* wwan0 or ppp0 working */
+		if(!k_lock->eth0_flag)
+		{
+			if(get_netstat("eth0") == 0)
 			{
-				log_info("\"eth0\" in good condition!\n ");
+				log_info("\"eth0\" in good condition NOW!\n ");
+
+				if(k_lock->ppp0_flag) 	//if ppp0 is working
+				{
+					switch_network_del("ppp0", k_lock->metric);
+
+					k_lock->ppp0_flag = 0;
+					k_lock->eth0_flag = 1;
+				}
+
+				if(k_lock->wwan0_flag) 	//if wwan0 is working
+				{
+					switch_network_del("wwan0", k_lock->metric);
+
+					k_lock->wwan0_flag = 0;
+					k_lock->eth0_flag = 1;
+				}
 
 				//get_pid("pppd");
-				kill_process("pppd");
-			}
-			else
-			{
-				/*  The network card does not exist*/
-				;
+				//kill_process("pppd");
 			}
 		}
 
-		pthread_mutex_unlock(&kill->lock);
+
+		/* ppp0 is working and eth0 isn't in good condition*/
+		if(!k_lock->eth0_flag || !k_lock->wwan0_flag)
+		{
+			if(get_netstat("wwan0") == 0)
+			{
+				log_info("\"wwan0\" in good condition NOW!\n ");
+
+				switch_network_del("ppp0", k_lock->metric);
+				switch_network_add("wwan0", k_lock->metric);
+
+				k_lock->ppp0_flag = 0;
+				k_lock->wwan0_flag = 1;
+			}
+		}
+
+		pthread_mutex_unlock(&k_lock->lock);
 		
 		log_debug("%s get UNLOCK and stop running...\n", __func__);
 		
@@ -427,49 +436,19 @@ void *thread_kill(void *args)
 
 void *thread_ping(void *args)
 {
-	int 	rate, rv;
+	int 	rate;
 
-	p_lock_t *ping = (p_lock_t *)args;
+	p_lock_t *p_lock = (p_lock_t *)args;
 
 
 	while(!run_stop)
 	{
-		pthread_mutex_lock(&ping->lock);
+		pthread_mutex_lock(&p_lock->lock);
 
 		log_debug("%s get lock and start running...\n", __func__);
 
 
-		if(ping->eth0_flag == 1)
-		{
-			rate = get_netstat("eth0");
-			if(rate < 0)
-			{
-				log_error("Get \"eth0\" network status failure!\n");
-			}
-			else if(rate == 0)
-			{
-				log_info("\"eth0\" in good condition!\n ");
-			}
-			else
-			{
-				rate = get_netstat("wwan0");
-				if(rate == 0)
-				{
-					switch_network_add("wwan0", ping->metric);
-
-					ping->wwan0_flag = 1;
-				}
-				else if(rate > 0)
-				{
-					ping->pppd_enabled = 1;
-				}
-				
-				ping->eth0_flag = 0;
-			}
-		}
-
-
-		if(ping->wwan0_flag == 1)
+		if(p_lock->wwan0_flag == 1)
 		{
 
 			rate = get_netstat("wwan0");
@@ -484,8 +463,9 @@ void *thread_ping(void *args)
 			else
 			{
 
-				ping->pppd_enabled = 1;
+				p_lock->pppd_enabled = 1;
 
+				switch_network_del("wwan0", p_lock->metric);
 #if 0
 				/*  The network card does not exist*/
 				rv = check_netcard_exist("ppp0");
@@ -494,16 +474,48 @@ void *thread_ping(void *args)
 
 				if(rv == 1) 	//not exist
 				{
-					ping->pppd_enabled = 1;
+					p_lock->pppd_enabled = 1;
 				}
 
-				ping->eth0_flag = 0;
+				p_lock->eth0_flag = 0;
 
 #endif
 			}
 		}
 
-		pthread_mutex_unlock(&ping->lock);
+
+		if(p_lock->eth0_flag == 1)
+		{
+			//rate = get_netstat("eth0");
+			rate = 100;
+			if(rate < 0)
+			{
+				log_error("Get \"eth0\" network status failure!\n");
+			}
+			else if(rate == 0)
+			{
+				log_info("\"eth0\" in good condition!\n ");
+			}
+			else
+			{
+				rate = get_netstat("wwan0");
+				if(rate == 0)
+				{
+					switch_network_add("wwan0", p_lock->metric);
+
+					p_lock->wwan0_flag = 1;
+				}
+				else if(rate > 0)
+				{
+					p_lock->pppd_enabled = 1;
+				}
+				
+				p_lock->eth0_flag = 0;
+			}
+		}
+
+
+		pthread_mutex_unlock(&p_lock->lock);
 		
 		log_debug("%s get UNLOCK and stop running...\n", __func__);
 		

@@ -246,11 +246,11 @@ int get_min_metric (int *min_metric)
 
 	while(fgets(msg, sizeof(msg), fp))
     {
-		log_debug("IP ROUTE buf: %s\n", msg);
+		//log_debug("IP ROUTE buf: %s\n", msg);
 
 		if(strstr(msg, "metric"))
 		{
-			log_debug("msg: %s\n", msg);
+			//log_debug("msg: %s\n", msg);
 
 			ptr = strstr(msg, "metric");
 
