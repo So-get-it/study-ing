@@ -131,7 +131,7 @@ int main(int argc, char **argv)
 	if(debug)
 	{
 		logfile = "stdout";
-		loglevel = LOG_LEVEL_DEBUG;
+		//loglevel = LOG_LEVEL_DEBUG;
 	}
 
 
@@ -231,7 +231,7 @@ int main(int argc, char **argv)
 				}
 
 
-				log_debug("The apn: %s\n", apn);
+				log_info("Get the apn: %s\n", apn);
 
 
 				rv = set_apn(attr.fd, apn);
@@ -254,6 +254,8 @@ int main(int argc, char **argv)
 			lock_ctx.wwan0_flag = 0;
 
 			lock_ctx.pppd_enabled = 0;
+
+			log_info("ppp0 working...\n");
 		}
 
 		pthread_mutex_unlock(&lock_ctx.lock);
@@ -390,6 +392,8 @@ void *thread_kill(void *args)
 				{
 					switch_network_del("ppp0", k_lock->metric);
 
+					log_info("ppp0 stop working...\n");
+
 					k_lock->ppp0_flag = 0;
 					k_lock->eth0_flag = 1;
 				}
@@ -397,6 +401,8 @@ void *thread_kill(void *args)
 				if(k_lock->wwan0_flag) 	//if wwan0 is working
 				{
 					switch_network_del("wwan0", k_lock->metric);
+
+					log_info("wwan0 stop working...\n");
 
 					k_lock->wwan0_flag = 0;
 					k_lock->eth0_flag = 1;
@@ -420,6 +426,8 @@ void *thread_kill(void *args)
 
 				k_lock->ppp0_flag = 0;
 				k_lock->wwan0_flag = 1;
+					
+				log_info("ppp0 stop working...\n");
 			}
 		}
 
@@ -486,8 +494,8 @@ void *thread_ping(void *args)
 
 		if(p_lock->eth0_flag == 1)
 		{
-			//rate = get_netstat("eth0");
-			rate = 100;
+			rate = get_netstat("eth0");
+			//rate = 100;
 			if(rate < 0)
 			{
 				log_error("Get \"eth0\" network status failure!\n");
@@ -498,16 +506,22 @@ void *thread_ping(void *args)
 			}
 			else
 			{
+				log_info("\"eth0\" poor network!\n ");
+
 				rate = get_netstat("wwan0");
 				if(rate == 0)
 				{
 					switch_network_add("wwan0", p_lock->metric);
 
 					p_lock->wwan0_flag = 1;
+				
+					log_info("\"wwan0\" start working!\n ");
 				}
 				else if(rate > 0)
 				{
 					p_lock->pppd_enabled = 1;
+				
+					log_info("\"pppd\" is enabled!\n ");
 				}
 				
 				p_lock->eth0_flag = 0;
