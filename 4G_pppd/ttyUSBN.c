@@ -198,14 +198,14 @@ int main(int argc, char **argv)
     /* pppd call rasppp */
     while(!run_stop)
     {
-        pthread_mutex_lock(&lock_ctx.lock);
-
-        log_debug("Pppd call get lock and start running...\n");
-        
         if(lock_ctx.pppd_enabled == 1)
         {
-            rv = check_netcard_exist("ppp0");
-            if(rv == 1)     //ppp0 not exist
+        	log_debug("Pppd call get lock and start running...\n");
+        	pthread_mutex_lock(&lock_ctx.lock); 	//lock up
+
+            //rv = check_netcard_exist("ppp0");
+
+            if(!access("/sys/class/net/ppp0", F_OK))     //ppp0 not exist
             {
                 /* Check AT command is available and the SIM card is normal */
                 rv = check_all_right(attr.fd);
@@ -247,7 +247,7 @@ int main(int argc, char **argv)
 
             }
             //ppp0 exist or pppd success
-            switch_network_add("ppp0", lock_ctx.metric);
+            //switch_network_add("ppp0", lock_ctx.metric);
 
             lock_ctx.ppp0_flag = 1;
             lock_ctx.eth0_flag = 0;
@@ -377,7 +377,7 @@ void *thread_kill(void *args)
 
     while(!run_stop)
     {
-        pthread_mutex_lock(&k_lock->lock);
+        pthread_mutex_lock(&k_lock->lock);  	//lock up
         log_debug("%s get lock and start running...\n", __func__);
 
 
@@ -390,7 +390,7 @@ void *thread_kill(void *args)
 
                 if(k_lock->ppp0_flag)   //if ppp0 is working
                 {
-                    switch_network_del("ppp0", k_lock->metric);
+                    //switch_network_del("ppp0", k_lock->metric);
 
                     log_info("ppp0 stop working...\n");
 
@@ -400,7 +400,7 @@ void *thread_kill(void *args)
 
                 if(k_lock->wwan0_flag)  //if wwan0 is working
                 {
-                    switch_network_del("wwan0", k_lock->metric);
+                    //switch_network_del("wwan0", k_lock->metric);
 
                     log_info("wwan0 stop working...\n");
 
@@ -408,8 +408,8 @@ void *thread_kill(void *args)
                     k_lock->eth0_flag = 1;
                 }
 
-                //get_pid("pppd");
-                //kill_process("pppd");
+                get_pid("pppd");
+                kill_process("pppd");
             }
         }
 
@@ -421,8 +421,8 @@ void *thread_kill(void *args)
             {
                 log_info("\"wwan0\" in good condition NOW!\n ");
 
-                switch_network_del("ppp0", k_lock->metric);
-                switch_network_add("wwan0", k_lock->metric);
+                //switch_network_del("ppp0", k_lock->metric);
+                //switch_network_add("wwan0", k_lock->metric);
 
                 k_lock->ppp0_flag = 0;
                 k_lock->wwan0_flag = 1;
@@ -473,7 +473,7 @@ void *thread_ping(void *args)
 
                 p_lock->pppd_enabled = 1;
 
-                switch_network_del("wwan0", p_lock->metric);
+                //switch_network_del("wwan0", p_lock->metric);
 #if 0
                 /*  The network card does not exist*/
                 rv = check_netcard_exist("ppp0");
@@ -494,8 +494,8 @@ void *thread_ping(void *args)
 
         if(p_lock->eth0_flag == 1)
         {
-            rate = get_netstat("eth0");
-            //rate = 100;
+            //rate = get_netstat("eth0");
+            rate = 100;
             if(rate < 0)
             {
                 log_error("Get \"eth0\" network status failure!\n");
@@ -511,7 +511,7 @@ void *thread_ping(void *args)
                 rate = get_netstat("wwan0");
                 if(rate == 0)
                 {
-                    switch_network_add("wwan0", p_lock->metric);
+                    //switch_network_add("wwan0", p_lock->metric);
 
                     p_lock->wwan0_flag = 1;
                 
