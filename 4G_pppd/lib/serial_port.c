@@ -27,7 +27,7 @@ int serial_open(char *fname)
         return -2;
     }
     
-	/* 是否为终端设备 */
+    /* 是否为终端设备 */
     if(0 == isatty(fd))  
     {
         log_error("%s:[%d] is not a Terminal equipment.\n", fname, fd);
@@ -57,7 +57,7 @@ int serial_close (int fd, struct termios *termios_p)
     }
 
     close(fd);
-	log_info("close OK..............\n");
+    log_info("close OK..............\n");
 
     return 0;
 } 
@@ -98,8 +98,8 @@ int serial_init(attr_t *attr, struct termios *oldtermios)
     /* 启动接收器，能够从串口中读取输入数据 */
     newtermios.c_cflag |= CREAD;
 
-	/* 将\n转换成\r */
-	newtermios.c_oflag |= ONLCR;
+    /* 将\n转换成\r */
+    newtermios.c_oflag |= ONLCR;
 
 
     /*
@@ -272,7 +272,7 @@ int serial_init(attr_t *attr, struct termios *oldtermios)
 int serial_send (int fd, char *msg, int msg_len)
 {
     int rv = 0;
-	
+    
     rv = write(fd, msg, msg_len);
     if(rv == msg_len)
     {
@@ -281,7 +281,7 @@ int serial_send (int fd, char *msg, int msg_len)
     else
     {
         tcflush(fd, TCOFLUSH);
-		log_error("%s write message failure: %s\n", __func__, strerror(errno));
+        log_error("%s write message failure: %s\n", __func__, strerror(errno));
 
         return -1;
     }
@@ -292,47 +292,47 @@ int serial_send (int fd, char *msg, int msg_len)
 int serial_recv(int fd, char *buf, int size)
 {
     int                 len, rv;
-	int 				flag = 0;
-	char 				save[256] = {0};
+    int                 flag = 0;
+    char                save[256] = {0};
     fd_set              rdset;
 
-	struct timeval      time;
+    struct timeval      time;
 
-	memset(buf, 0, size);
+    memset(buf, 0, size);
 
-	while(!flag)
-	{
-		FD_ZERO(&rdset);
-		FD_SET(fd, &rdset);
+    while(!flag)
+    {
+        FD_ZERO(&rdset);
+        FD_SET(fd, &rdset);
 
-		time.tv_sec= 10;
-		time.tv_usec= 0;
+        time.tv_sec= 10;
+        time.tv_usec= 0;
 
-		//使用select实现串口的多路通信
-		rv = select(fd+1,&rdset,NULL,NULL,&time);
+        //使用select实现串口的多路通信
+        rv = select(fd+1,&rdset,NULL,NULL,&time);
 
-		rv = read(fd, save, size);
-		if(rv)
-		{
-			if(strstr(save, "OK") || strstr(save, "ERROR"))
-			{
-				snprintf(buf, size, "%s%s", buf, save);
-				log_info("Receive: %s\n", buf);
+        rv = read(fd, save, size);
+        if(rv)
+        {
+            if(strstr(save, "OK") || strstr(save, "ERROR"))
+            {
+                snprintf(buf, size, "%s%s", buf, save);
+                log_info("Receive: %s\n", buf);
 
-				flag = 1;
-			}
-			else
-			{
-				snprintf(buf, size, "%s%s", buf, save);
-			}
-		}
-		else
-		{
-			log_error("%s read message failure: %s\n", __func__, strerror(errno));
-			return -1;
-		}
+                flag = 1;
+            }
+            else
+            {
+                snprintf(buf, size, "%s%s", buf, save);
+            }
+        }
+        else
+        {
+            log_error("%s read message failure: %s\n", __func__, strerror(errno));
+            return -1;
+        }
 
-	}
-	return rv;
+    }
+    return rv;
 } 
 
