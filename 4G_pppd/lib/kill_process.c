@@ -41,6 +41,7 @@ int kill_process (const char *procs)
 #if 1
 
         snprintf(cmd, sizeof(cmd), "sudo kill -15 %s", msg);
+        log_info("command: %s\n", cmd);
 
         system(cmd);
 
@@ -67,16 +68,15 @@ int kill_process (const char *procs)
 
 
 
-int get_pid (const char *procs)
+int get_pid (const char *procs, char *msg)
 {
     int             retval, pid;
     FILE            *ppid;
     char            buf[64] = {0};
-    char            msg[128] = {0};
+    //char            msg[128] = {0};
 
 
-    //snprintf(buf, sizeof(buf), "ps -C %s | grep %s | awk \'{print $2}\'", procs, procs);
-    snprintf(buf, sizeof(buf), "ps -C pppd| grep %s", procs);
+    snprintf(buf, sizeof(buf), "ps -C %s | grep %s | awk \'{print $1}\'", procs, procs);
 
     log_debug("pid_get snprintf buf: %s\n", buf);
 

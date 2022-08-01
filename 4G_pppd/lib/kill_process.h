@@ -17,7 +17,7 @@
 extern int kill_process (const char *procs);
 
 
-extern int get_pid (const char *procs);
+extern int get_pid (const char *procs, char *msg);
 
 
 #endif

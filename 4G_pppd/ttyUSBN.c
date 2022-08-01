@@ -131,7 +131,7 @@ int main(int argc, char **argv)
     if(debug)
     {
         logfile = "stdout";
-        //loglevel = LOG_LEVEL_DEBUG;
+        loglevel = LOG_LEVEL_DEBUG;
     }
 
 
@@ -188,24 +188,25 @@ int main(int argc, char **argv)
 
     //创建第一个子线程，设置为相分离状态
     pthread_create(&tid1, &thread_attr, thread_ping, &lock_ctx);
-    log_info("Thread worker1 tid[%ld] created ok\n", tid1);
+    log_info("Thread_ping tid[%ld] created ok\n", tid1);
 
     //创建第二个子线程，设置为相分离状态
     pthread_create(&tid1, &thread_attr, thread_kill, &lock_ctx);
-    log_info("Thread worker1 tid[%ld] created ok\n", tid1);
+    log_info("Thread_kill tid[%ld] created ok\n", tid1);
 
 
     /* pppd call rasppp */
     while(!run_stop)
     {
+        pthread_mutex_lock(&lock_ctx.lock); 	//lock up
+        log_debug("Pppd call get lock and start running...\n");
+
         if(lock_ctx.pppd_enabled == 1)
         {
-        	log_debug("Pppd call get lock and start running...\n");
-        	pthread_mutex_lock(&lock_ctx.lock); 	//lock up
-
             //rv = check_netcard_exist("ppp0");
+			//if(rv > 0)
 
-            if(!access("/sys/class/net/ppp0", F_OK))     //ppp0 not exist
+            if(access("/sys/class/net/ppp0", F_OK))     //ppp0 not exist
             {
                 /* Check AT command is available and the SIM card is normal */
                 rv = check_all_right(attr.fd);
@@ -241,7 +242,7 @@ int main(int argc, char **argv)
                 }
 
                 /* dial-up */
-                system("sudo pppd call rasppp &");
+                system("sudo pppd call rasppp");
 
                 log_info("\"sudo pppd call rasppp\" process start running\n");
 
@@ -257,11 +258,12 @@ int main(int argc, char **argv)
 
             log_info("ppp0 working...\n");
         }
+		sleep(3);
 
         pthread_mutex_unlock(&lock_ctx.lock);
         log_debug("Pppd call get UNLOCK success...\n");
 
-        sleep(3);
+		sleep(1);
     }
 #if 0
 
@@ -371,71 +373,73 @@ int main(int argc, char **argv)
 void *thread_kill(void *args)
 {
     //int   rate, rv;
+    char                pid_s[8] = {0};
 
     p_lock_t *k_lock = (p_lock_t *)args;
 
 
     while(!run_stop)
     {
-        pthread_mutex_lock(&k_lock->lock);  	//lock up
-        log_debug("%s get lock and start running...\n", __func__);
+		pthread_mutex_lock(&k_lock->lock);  	//lock up
+		log_debug("%s get lock and start running...\n", __func__);
 
 
-        /* wwan0 or ppp0 working */
-        if(!k_lock->eth0_flag)
-        {
-            if(get_netstat("eth0") == 0)
-            {
-                log_info("\"eth0\" in good condition NOW!\n ");
+		if(0 == k_lock->pppd_enabled)
+		{
+			/* wwan0 or ppp0 working */
+			if(!k_lock->eth0_flag)
+			{
+				if(get_netstat("eth0") == 0)
+				{
+					log_info("\"eth0\" in good condition NOW!\n ");
 
-                if(k_lock->ppp0_flag)   //if ppp0 is working
-                {
-                    //switch_network_del("ppp0", k_lock->metric);
+					if(k_lock->ppp0_flag)   //if ppp0 is working
+					{
+						//switch_network_del("ppp0", k_lock->metric);
 
-                    log_info("ppp0 stop working...\n");
+						log_info("ppp0 stop working...\n");
 
-                    k_lock->ppp0_flag = 0;
-                    k_lock->eth0_flag = 1;
-                }
+						k_lock->ppp0_flag = 0;
+						k_lock->eth0_flag = 1;
+					}
 
-                if(k_lock->wwan0_flag)  //if wwan0 is working
-                {
-                    //switch_network_del("wwan0", k_lock->metric);
+					if(k_lock->wwan0_flag)  //if wwan0 is working
+					{
+						//switch_network_del("wwan0", k_lock->metric);
 
-                    log_info("wwan0 stop working...\n");
+						log_info("wwan0 stop working...\n");
 
-                    k_lock->wwan0_flag = 0;
-                    k_lock->eth0_flag = 1;
-                }
+						k_lock->wwan0_flag = 0;
+						k_lock->eth0_flag = 1;
+					}
 
-                get_pid("pppd");
-                kill_process("pppd");
-            }
-        }
+					get_pid("pppd", pid_s);
+					kill_process("pppd");
+				}
+			}
 
 
-        /* ppp0 is working and eth0 isn't in good condition*/
-        if(!k_lock->eth0_flag || !k_lock->wwan0_flag)
-        {
-            if(get_netstat("wwan0") == 0)
-            {
-                log_info("\"wwan0\" in good condition NOW!\n ");
+			/* ppp0 is working and eth0 isn't in good condition*/
+			if(!k_lock->eth0_flag || !k_lock->wwan0_flag)
+			{
+				if(get_netstat("wwan0") == 0)
+				{
+					log_info("\"wwan0\" in good condition NOW!\n ");
 
-                //switch_network_del("ppp0", k_lock->metric);
-                //switch_network_add("wwan0", k_lock->metric);
+					//switch_network_del("ppp0", k_lock->metric);
+					//switch_network_add("wwan0", k_lock->metric);
 
-                k_lock->ppp0_flag = 0;
-                k_lock->wwan0_flag = 1;
-                    
-                log_info("ppp0 stop working...\n");
-            }
-        }
+					k_lock->ppp0_flag = 0;
+					k_lock->wwan0_flag = 1;
 
-        pthread_mutex_unlock(&k_lock->lock);
-        
-        log_debug("%s get UNLOCK and stop running...\n", __func__);
-        
-        sleep(3);
+					log_info("ppp0 stop working...\n");
+				}
+			}
+		}
+		pthread_mutex_unlock(&k_lock->lock);
+		log_debug("%s get UNLOCK and stop running...\n", __func__);
+
+		sleep(3);
     }
 
     pthread_exit(NULL);
@@ -452,7 +456,6 @@ void *thread_ping(void *args)
     while(!run_stop)
     {
         pthread_mutex_lock(&p_lock->lock);
-
         log_debug("%s get lock and start running...\n", __func__);
 
 
@@ -530,7 +533,6 @@ void *thread_ping(void *args)
 
 
         pthread_mutex_unlock(&p_lock->lock);
-        
         log_debug("%s get UNLOCK and stop running...\n", __func__);
         
         sleep(3);
