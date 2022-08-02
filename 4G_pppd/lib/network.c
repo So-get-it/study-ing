@@ -27,7 +27,7 @@
  *                >0        The network status is poor or unavailable
  * =====================================================================================
  */
-int get_netstat (char *netname)
+int get_netstat (char *netname, char *hostname)
 {
     //int       fd, rv;
     int         rate;
@@ -61,7 +61,7 @@ int get_netstat (char *netname)
     }
 */
 
-    snprintf(buf, sizeof(buf), "ping baidu.com -I %s -c 3", netname);
+    snprintf(buf, sizeof(buf), "ping %s -I %s -c 3", hostname, netname);
 
     if((fp = popen(buf, "r")) == NULL)
     {

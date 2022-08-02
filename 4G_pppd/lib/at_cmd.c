@@ -120,7 +120,7 @@ int check_SIM_normal (int fd)
 
 
 
-int check_SIM_login (int fd)
+int check_SIM_register (int fd)
 {
     int         retval;
     char        msg[32] = {0};

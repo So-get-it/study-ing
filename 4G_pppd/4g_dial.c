@@ -22,8 +22,12 @@
 #include "at_cmd.h"
 #include "4g_dial.h"
 
+#define WIRED "eth0"
+#define WIFI  "wwan0"
+#define DIAL  "ppp0"
 
-//void *thread_pppd(void *args);
+#define HOST  "baidu.com"
+
 void *thread_ping(void *args);
 void *thread_kill(void *args);
 
@@ -46,6 +50,7 @@ int main(int argc, char **argv)
     char                mcc[4] = {0};
     char                mnc[4] = {0};
     char                apn[16] = {0};
+    char                netcard[32] = {0};
     //fd_set              fdset;
     attr_t              attr;
     struct termios      oldtio;
@@ -185,15 +190,17 @@ int main(int argc, char **argv)
     /* pppd call rasppp */
     while(!run_stop)
     {
-        pthread_mutex_lock(&lock_ctx.lock); 	//lock up
+        pthread_mutex_lock(&lock_ctx.lock);     //lock up
         log_debug("Pppd call get lock and start running...\n");
 
         if(lock_ctx.pppd_enabled == enable)
         {
-            //rv = check_netcard_exist("ppp0");
-			//if(rv > 0)
+            //rv = check_netcard_exist(DIAL);
+            //if(rv > 0)
 
-            if(access("/sys/class/net/ppp0", F_OK))     //ppp0 not exist
+			snprintf(netcard, sizeof(netcard), "/sys/class/net/%s", DIAL);
+
+            if(access(netcard, F_OK))     //ppp0 not exist
             {
                 /* Check AT command is available and the SIM card is normal */
                 rv = check_all_right(attr.fd);
@@ -232,11 +239,13 @@ int main(int argc, char **argv)
                 system("sudo pppd call rasppp");
 
                 log_info("\"sudo pppd call rasppp\" process start running\n");
+        		
+				sleep(3);
 
             }
             /* ppp0 exist or pppd success*/
 
-            //switch_network_add("ppp0", lock_ctx.metric);
+            //switch_network_add(DIAL, lock_ctx.metric);
 
             lock_ctx.ppp0_flag = enable;
             lock_ctx.eth0_flag = disable;
@@ -244,14 +253,13 @@ int main(int argc, char **argv)
 
             lock_ctx.pppd_enabled = disable;
 
-            log_info("ppp0 working...\n");
+            log_info("%s working...\n", DIAL);
         }
-		sleep(3);
 
         pthread_mutex_unlock(&lock_ctx.lock);
         log_debug("Pppd call get UNLOCK success...\n");
 
-		sleep(1);
+		usleep(1000);
     }
 
     
@@ -269,73 +277,74 @@ int main(int argc, char **argv)
 void *thread_kill(void *args)
 {
     //int   rate, rv;
-    char                pid_s[8] = {0};
+    char                pid_s[16] = {0};
 
     p_lock_t *k_lock = (p_lock_t *)args;
 
 
     while(!run_stop)
     {
-		pthread_mutex_lock(&k_lock->lock);  	//lock up
-		log_debug("%s get lock and start running...\n", __func__);
+        pthread_mutex_lock(&k_lock->lock);      //lock up
+        log_debug("%s get lock and start running...\n", __func__);
 
 
-		if(0 == k_lock->pppd_enabled)
-		{
-			/* wwan0 or ppp0 working */
-			if(!k_lock->eth0_flag)
-			{
-				if(get_netstat("eth0") == 0)
-				{
-					log_info("\"eth0\" in good condition NOW!\n ");
+        if(disable == k_lock->pppd_enabled)
+        {
+            /* wwan0 or ppp0 working */
+            if(!k_lock->eth0_flag)
+            {
+                if(get_netstat(WIRED, HOST) == 0)
+                {
+                    log_info("\"%s\" in good condition NOW!\n ", WIRED);
 
-					if(k_lock->ppp0_flag)   //if ppp0 is working
-					{
-						//switch_network_del("ppp0", k_lock->metric);
+                    if(k_lock->ppp0_flag)   //if ppp0 is working
+                    {
+                        //switch_network_del(DIAL, k_lock->metric);
 
-						log_info("ppp0 stop working...\n");
+                        log_info("%s stop working...\n", DIAL);
 
-						k_lock->ppp0_flag = disable;
-						k_lock->eth0_flag = enable;
-					}
+                        k_lock->ppp0_flag = disable;
+                        k_lock->eth0_flag = enable;
+                    }
 
-					if(k_lock->wwan0_flag)  //if wwan0 is working
-					{
-						//switch_network_del("wwan0", k_lock->metric);
+                    if(k_lock->wwan0_flag)  //if wwan0 is working
+                    {
+                        //switch_network_del(WIFI, k_lock->metric);
 
-						log_info("wwan0 stop working...\n");
+                        log_info("%s stop working...\n", WIFI);
 
-						k_lock->wwan0_flag = disable;
-						k_lock->eth0_flag = enable;
-					}
+                        k_lock->wwan0_flag = disable;
+                        k_lock->eth0_flag = enable;
+                    }
 
-					get_pid("pppd", pid_s);
-					kill_process("pppd");
-				}
-			}
+                    get_pid(DIAL, pid_s);
+                    kill_process(DIAL);
+                }
+            }
 
 
-			/* ppp0 is working and eth0 isn't in good condition*/
-			if(!k_lock->eth0_flag || !k_lock->wwan0_flag)
-			{
-				if(get_netstat("wwan0") == 0)
-				{
-					log_info("\"wwan0\" in good condition NOW!\n ");
+            /* ppp0 is working and eth0 isn't in good condition*/
+            if(!k_lock->eth0_flag || !k_lock->wwan0_flag)
+            {
+                if(get_netstat(WIFI, HOST) == 0)
+                {
+                    log_info("\"%s\" in good condition NOW!\n", WIFI);
 
-					//switch_network_del("ppp0", k_lock->metric);
-					//switch_network_add("wwan0", k_lock->metric);
+                    //switch_network_del(DIAL, k_lock->metric);
+                    //switch_network_add(WIFI, k_lock->metric);
 
-					k_lock->ppp0_flag = disable;
-					k_lock->wwan0_flag = enable;
+                    k_lock->ppp0_flag = disable;
+                    k_lock->wwan0_flag = enable;
 
-					log_info("ppp0 stop working...\n");
-				}
-			}
-		}
-		pthread_mutex_unlock(&k_lock->lock);
-		log_debug("%s get UNLOCK and stop running...\n", __func__);
+                    log_info("%s stop working...\n", DIAL);
+                }
+            }
+			sleep(3);
+        }
+        pthread_mutex_unlock(&k_lock->lock);
+        log_debug("%s get UNLOCK and stop running...\n", __func__);
 
-		sleep(3);
+        usleep(1000);
     }
 
     pthread_exit(NULL);
@@ -355,17 +364,17 @@ void *thread_ping(void *args)
         log_debug("%s get lock and start running...\n", __func__);
 
 
-        if(p_lock->wwan0_flag == 1)
+        if(p_lock->wwan0_flag == enable)
         {
 
-            rate = get_netstat("wwan0");
+            rate = get_netstat(WIFI, HOST);
             if(rate < 0)
             {
-                log_error("Get \"wwan0\" network status failure!\n");
+                log_error("Get \"%s\" network status failure!\n", WIFI);
             }
             else if(rate == 0)
             {
-                log_info("\"wwan0\" in good condition!\n ");
+                log_info("\"%s\" in good condition!\n", WIFI);
             }
             else
             {
@@ -379,34 +388,34 @@ void *thread_ping(void *args)
 
         if(p_lock->eth0_flag == enable)
         {
-            //rate = get_netstat("eth0");
+            //rate = get_netstat(WIRED, HOST);
             rate = 100;
             if(rate < 0)
             {
-                log_error("Get \"eth0\" network status failure!\n");
+                log_error("Get \"%s\" network status failure!\n", WIRED);
             }
             else if(rate == 0)
             {
-                log_info("\"eth0\" in good condition!\n ");
+                log_info("\"%s\" in good condition!\n ", WIRED);
             }
             else
             {
-                log_info("\"eth0\" poor network!\n ");
+                log_info("\"%s\" poor network!\n ", WIRED);
 
-                rate = get_netstat("wwan0");
+                rate = get_netstat(WIFI, HOST);
                 if(rate == 0)
                 {
-                    //switch_network_add("wwan0", p_lock->metric);
+                    //switch_network_add(WIFI, p_lock->metric);
 
                     p_lock->wwan0_flag = enable;
                 
-                    log_info("\"wwan0\" start working!\n ");
+                    log_info("\"%s\" start working!\n ", WIFI);
                 }
                 else if(rate > 0)
                 {
                     p_lock->pppd_enabled = enable;
                 
-                    log_info("\"pppd\" is enabled!\n ");
+                    log_info("\"%s\" is enabled!\n ", DIAL);
                 }
                 
                 p_lock->eth0_flag = disable;

@@ -19,7 +19,7 @@ enum mode
 {
 	disable,
 	enable
-}
+};
 
 typedef struct p_lock_s
 {
@@ -30,8 +30,6 @@ typedef struct p_lock_s
     int                     metric;
     pthread_mutex_t         lock;
 }p_lock_t;
-
-
 
 
 

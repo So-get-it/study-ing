@@ -28,7 +28,7 @@
 
 #define LOG_NAME ".netstat.log"
 
-extern int get_netstat(char *netname);
+extern int get_netstat(char *netname, char *hostname);
 
 extern int check_netcard_exist(char *netname);
 

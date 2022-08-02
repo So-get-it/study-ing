@@ -92,8 +92,6 @@ int get_pid (const char *procs, char *msg)
 
     log_debug("pid_get snprintf buf: %s\n", buf);
 
-    fflush(stdout);
-
     if((ppid = popen(buf, "r")) == NULL)
     {
         log_error("%s popen() failure: %s\n", __func__, strerror(errno));
