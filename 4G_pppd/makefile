@@ -1,6 +1,6 @@
 LIBPATH=/home/nbiot/chenzhenyu/4G_pppd/lib/
 LD_LIBRARY_PATH=/home/nbiot/chenzhenyu/4G_pppd/lib/
-FNAME=ttyUSBN
+FNAME=4g_dial
 
 all: clean
 	gcc -W -Wall -I${LIBPATH} ${FNAME}.c -o ${FNAME} -L ${LIBPATH} -lserial -lxml2 -lpthread

@@ -1,3 +1,16 @@
+/*********************************************************************************
+ *      Copyright:  (C) 2022 Chen Zhenyu<2472734278@qq.com>
+ *                  All rights reserved.
+ *
+ *       Filename:  4g_dial.c
+ *    Description:  This file is to dialing up.
+ *                 
+ *        Version:  1.0.0(02/07/22)
+ *         Author:  Chen Zhenyu <2472734278@qq.com>
+ *      ChangeLog:  1, Release initial version on "02/07/22 10:03:13"
+ *                 
+ ********************************************************************************/
+
 #include <signal.h>
 #include <getopt.h>
 #include <pthread.h>
@@ -7,31 +20,7 @@
 #include "kill_process.h"
 #include "network.h"
 #include "at_cmd.h"
-
-
-
-#define SERIAL_DEBUG
-
-/*
-
-#ifdef SERIAL_DEBUG
-#define serial_print(format, args...) printf(format, ##args)
-#else
-#define serial_print(format, args...) do{} while(0)
-#endif
-
-*/
-
-
-typedef struct p_lock_s
-{
-    int                     pppd_enabled;
-    int                     eth0_flag;
-    int                     wwan0_flag;
-    int                     ppp0_flag;
-    int                     metric;
-    pthread_mutex_t         lock;
-}p_lock_t;
+#include "4g_dial.h"
 
 
 //void *thread_pppd(void *args);
@@ -66,10 +55,10 @@ int main(int argc, char **argv)
     p_lock_t            lock_ctx;
     
 
-    lock_ctx.eth0_flag = 1;
-    lock_ctx.wwan0_flag = 0;
-    lock_ctx.ppp0_flag = 0;
-    lock_ctx.pppd_enabled = 0;
+    lock_ctx.eth0_flag = enable;
+    lock_ctx.wwan0_flag = disable;
+    lock_ctx.ppp0_flag = disable;
+    lock_ctx.pppd_enabled = disable;
 
     pthread_mutex_init(&lock_ctx.lock, NULL);
 
@@ -186,11 +175,9 @@ int main(int argc, char **argv)
     }
 
 
-    //创建第一个子线程，设置为相分离状态
     pthread_create(&tid1, &thread_attr, thread_ping, &lock_ctx);
     log_info("Thread_ping tid[%ld] created ok\n", tid1);
 
-    //创建第二个子线程，设置为相分离状态
     pthread_create(&tid1, &thread_attr, thread_kill, &lock_ctx);
     log_info("Thread_kill tid[%ld] created ok\n", tid1);
 
@@ -201,7 +188,7 @@ int main(int argc, char **argv)
         pthread_mutex_lock(&lock_ctx.lock); 	//lock up
         log_debug("Pppd call get lock and start running...\n");
 
-        if(lock_ctx.pppd_enabled == 1)
+        if(lock_ctx.pppd_enabled == enable)
         {
             //rv = check_netcard_exist("ppp0");
 			//if(rv > 0)
@@ -247,14 +234,15 @@ int main(int argc, char **argv)
                 log_info("\"sudo pppd call rasppp\" process start running\n");
 
             }
-            //ppp0 exist or pppd success
+            /* ppp0 exist or pppd success*/
+
             //switch_network_add("ppp0", lock_ctx.metric);
 
-            lock_ctx.ppp0_flag = 1;
-            lock_ctx.eth0_flag = 0;
-            lock_ctx.wwan0_flag = 0;
+            lock_ctx.ppp0_flag = enable;
+            lock_ctx.eth0_flag = disable;
+            lock_ctx.wwan0_flag = disable;
 
-            lock_ctx.pppd_enabled = 0;
+            lock_ctx.pppd_enabled = disable;
 
             log_info("ppp0 working...\n");
         }
@@ -265,100 +253,8 @@ int main(int argc, char **argv)
 
 		sleep(1);
     }
-#if 0
 
-    //创建第二个子线程
-    pthread_create(&tid2, &thread_attr, thread_pppd, &lock_ctx);
-    printf("Thread worker2 tid[%ld] created ok\n", tid2);
-
-#endif
-
-
-#if 0
-
-    while(!run_stop)
-    {
-        FD_ZERO(&fdset);    //清空所有文件描述符
-        FD_SET(STDIN_FILENO, &fdset);   //添加标准输入到fdset中
-        FD_SET(attr.fd, &fdset);                //添加文件描述符fd到fdset中
-
-        /*  使用select多路复用监听标准输入和串口fd */
-        rv = select(attr.fd + 1, &fdset, NULL, NULL, NULL);
-        if(rv < 0)
-        {
-            log_error("Select failure......\n");
-            break;
-        }
-
-        if(rv == 0)
-        {
-            log_error("Time Out.\n");
-            goto cleanup;
-        }
-
-        //有事件发生
-        if(FD_ISSET(STDIN_FILENO,&fdset))
-        {
-            memset(send_msg, 0, sizeof(send_msg));
-
-            /* 从标准输入读取命令 */
-            fgets(send_msg, sizeof(send_msg), stdin);
-            
-            /* 把命令最后的\n转换成\r */
-            adjust_buf(send_msg);
-
-            if((rv = serial_send(attr.fd, send_msg, strlen(send_msg))) < 0)
-            {
-                log_error("Write failed.\n");
-                goto cleanup;
-            }
-
-
-#ifndef SERIAL_DEBUG
-
-            for(i = 0; i < rv; i++)
-            {
-                log_debug("Byte: %c\t ASCII: 0x%x\n", send_msg[i], (int)send_msg[i]);
-            }
-
-            log_debug("Write success!\n\n");
-#endif
-
-            //fflush(stdin);
-
-        }
-
-        if(FD_ISSET(attr.fd,&fdset))
-        {
-            memset(recv_msg, 0, sizeof(recv_msg));
-
-            rv = read(attr.fd, recv_msg, sizeof(recv_msg));
-            if(rv <= 0)
-            {
-                log_error("Read failed: %s\n",strerror(errno));
-                break;
-            }
-
-            printf("%s", recv_msg);
-
-#ifndef SERIAL_DEBUG
-            log_debug("Receive %d bytes data: %s",rv, recv_msg);
-
-            for(i = 0; i < rv; i++)
-            {
-                log_debug("Byte: %c\t ASCII: 0x%x\n", recv_msg[i], (int)recv_msg[i]);
-            }
-#endif
-
-            //fflush(stdout);
-        }
-
-        //sleep(1);
-    }
-
-#endif
     
-//cleanup:
     serial_close(attr.fd, &oldtio);
 
     log_info("Program '%s' stop running\n", __FILE__);
@@ -399,8 +295,8 @@ void *thread_kill(void *args)
 
 						log_info("ppp0 stop working...\n");
 
-						k_lock->ppp0_flag = 0;
-						k_lock->eth0_flag = 1;
+						k_lock->ppp0_flag = disable;
+						k_lock->eth0_flag = enable;
 					}
 
 					if(k_lock->wwan0_flag)  //if wwan0 is working
@@ -409,8 +305,8 @@ void *thread_kill(void *args)
 
 						log_info("wwan0 stop working...\n");
 
-						k_lock->wwan0_flag = 0;
-						k_lock->eth0_flag = 1;
+						k_lock->wwan0_flag = disable;
+						k_lock->eth0_flag = enable;
 					}
 
 					get_pid("pppd", pid_s);
@@ -429,8 +325,8 @@ void *thread_kill(void *args)
 					//switch_network_del("ppp0", k_lock->metric);
 					//switch_network_add("wwan0", k_lock->metric);
 
-					k_lock->ppp0_flag = 0;
-					k_lock->wwan0_flag = 1;
+					k_lock->ppp0_flag = disable;
+					k_lock->wwan0_flag = enable;
 
 					log_info("ppp0 stop working...\n");
 				}
@@ -474,28 +370,14 @@ void *thread_ping(void *args)
             else
             {
 
-                p_lock->pppd_enabled = 1;
+                p_lock->pppd_enabled = enable;
 
                 //switch_network_del("wwan0", p_lock->metric);
-#if 0
-                /*  The network card does not exist*/
-                rv = check_netcard_exist("ppp0");
-
-                log_debug("ppp0 exist or not(0-yes/1-no): %d\n", rv);
-
-                if(rv == 1)     //not exist
-                {
-                    p_lock->pppd_enabled = 1;
-                }
-
-                p_lock->eth0_flag = 0;
-
-#endif
             }
         }
 
 
-        if(p_lock->eth0_flag == 1)
+        if(p_lock->eth0_flag == enable)
         {
             //rate = get_netstat("eth0");
             rate = 100;
@@ -516,18 +398,18 @@ void *thread_ping(void *args)
                 {
                     //switch_network_add("wwan0", p_lock->metric);
 
-                    p_lock->wwan0_flag = 1;
+                    p_lock->wwan0_flag = enable;
                 
                     log_info("\"wwan0\" start working!\n ");
                 }
                 else if(rate > 0)
                 {
-                    p_lock->pppd_enabled = 1;
+                    p_lock->pppd_enabled = enable;
                 
                     log_info("\"pppd\" is enabled!\n ");
                 }
                 
-                p_lock->eth0_flag = 0;
+                p_lock->eth0_flag = disable;
             }
         }
 
@@ -540,122 +422,6 @@ void *thread_ping(void *args)
 
     pthread_exit(NULL);
 }
-
-
-
-#if 0
-void *thread_kill(void *args)
-{
-    int     rate, rv;
-
-    p_lock_t *kill = (p_lock_t *)args;
-
-
-    while(!run_stop)
-    {
-
-        pthread_mutex_lock(&kill->lock);
-        log_debug("%s get lock and start running...\n", __func__);
-
-        rv = check_netcard_exist("ppp0");
-        if(rv == 0)
-        {
-            log_debug("ppp0 exist or not(0-yes/1-no): %d\n", rv);
-            
-            rate = get_netstat("eth0");
-            if(rate < 0)
-            {
-                log_error("Get \"eth0\" network status failure!\n");
-
-                pthread_exit(NULL);
-            }
-            else if(rate == 0)
-            {
-                log_info("\"eth0\" in good condition!\n ");
-
-                //get_pid("pppd");
-                kill_process("pppd");
-            }
-            else
-            {
-                /*  The network card does not exist*/
-                ;
-            }
-        }
-
-        pthread_mutex_unlock(&kill->lock);
-        
-        log_debug("%s get UNLOCK and stop running...\n", __func__);
-        
-        sleep(3);
-    }
-
-    pthread_exit(NULL);
-}
-
-#endif
-
-
-
-#if 0
-
-void *thread_pppd(void *args)
-{
-    p_lock_t *pppd= (p_lock_t *)args;
-
-    while(!run_stop)
-    {
-        pthread_mutex_lock(&pppd->lock);
-
-        if(pppd->pppd_enabled == 1)
-        {
-            /* Check AT command is available and the SIM card is normal */
-
-            check_all_right(pppd->fd);
-            if(rv < 0)
-            {
-                log_error("check_all_right() check something error!!!");
-            }
-
-
-            /*----------- Set the APN------------ */
-
-            get_mcc_mnc(pppd->fd, mcc, mnc);
-            if(rv < 0)
-            {
-                log_error("get_mcc_mnc() failure!!!");
-            }
-
-
-            parse_apn(APNS_XML, mcc, mnc, apn);
-            if(rv < 0)
-            {
-                log_error("parse_apn failure!!!");
-            }
-
-
-            log_debug("The apn: %s\n", apn);
-
-
-            set_apn(pppd->fd, apn);
-            if(rv < 0)
-            {
-                log_error("set_apn failure!!!");
-            }
-
-            system("sudo pppd call rasppp");
-
-            pppd->pppd_enabled = 0;
-        }
-
-        pthread_mutex_unlock(&pppd->lock);
-
-        sleep(3);
-    }
-    pthread_exit(NULL);
-}
-
-#endif
 
 
 

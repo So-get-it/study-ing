@@ -1,3 +1,15 @@
+/*********************************************************************************
+ *      Copyright:  (C) 2022 Chen Zhenyu<2472734278@qq.com>
+ *                  All rights reserved.
+ *
+ *       Filename:  serial_port.h
+ *    Description:  This file is related to serial port.
+ *
+ *        Version:  1.0.0(05/07/22)
+ *         Author:  Chen Zhenyu <2472734278@qq.com>
+ *      ChangeLog:  1, Release initial version on "05/07/22 14:44:13"
+ *
+ ********************************************************************************/
 
 #include <stdio.h>
 #include <unistd.h>

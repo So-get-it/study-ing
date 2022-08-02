@@ -1,3 +1,15 @@
+/*********************************************************************************
+ *      Copyright:  (C) 2022 Chen Zhenyu<2472734278@qq.com>
+ *                  All rights reserved.
+ *
+ *       Filename:  at_cmd.h
+ *    Description:  This file is related to AT command.
+ *
+ *        Version:  1.0.0(10/07/22)
+ *         Author:  Chen Zhenyu <2472734278@qq.com>
+ *      ChangeLog:  1, Release initial version on "10/07/22 22:05:16"
+ *
+ ********************************************************************************/
 
 
 

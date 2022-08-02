@@ -1,3 +1,15 @@
+/*********************************************************************************
+ *      Copyright:  (C) 2022 Chen Zhenyu<2472734278@qq.com>
+ *                  All rights reserved.
+ *
+ *       Filename:  network.h
+ *    Description:  This file is related to network.
+ *
+ *        Version:  1.0.0(15/07/22)
+ *         Author:  Chen Zhenyu <2472734278@qq.com>
+ *      ChangeLog:  1, Release initial version on "15/07/22 17:07:16"
+ *
+ ********************************************************************************/
 
 #include <stdio.h>
 #include <string.h>
