@@ -230,7 +230,7 @@ int main(int argc, char **argv)
 			}
             /* ppp0 exist or pppd success*/
 
-            //switch_network_add(DIAL, lock_ctx.metric);
+            switch_network_add(DIAL, lock_ctx.metric);
 
             lock_ctx.ppp0_flag = enable;
             lock_ctx.eth0_flag = disable;
@@ -284,7 +284,7 @@ void *thread_kill(void *args)
 
                     if(k_lock->ppp0_flag)   //if ppp0 is working
                     {
-                        //switch_network_del(DIAL, k_lock->metric);
+                        switch_network_del(DIAL, k_lock->metric);
 
                         log_info("%s stop working...\n", DIAL);
 
@@ -294,7 +294,7 @@ void *thread_kill(void *args)
 
                     if(k_lock->wwan0_flag)  //if wwan0 is working
                     {
-                        //switch_network_del(WIFI, k_lock->metric);
+                        switch_network_del(WIFI, k_lock->metric);
 
                         log_info("%s stop working...\n", WIFI);
 
@@ -315,8 +315,8 @@ void *thread_kill(void *args)
                 {
                     log_info("\"%s\" in good condition NOW!\n", WIFI);
 
-                    //switch_network_del(DIAL, k_lock->metric);
-                    //switch_network_add(WIFI, k_lock->metric);
+                    switch_network_del(DIAL, k_lock->metric);
+                    switch_network_add(WIFI, k_lock->metric);
 
                     k_lock->ppp0_flag = disable;
                     k_lock->wwan0_flag = enable;
@@ -366,15 +366,15 @@ void *thread_ping(void *args)
 
                 p_lock->pppd_enabled = enable;
 
-                //switch_network_del("wwan0", p_lock->metric);
+                switch_network_del("wwan0", p_lock->metric);
             }
         }
 
 
         if(p_lock->eth0_flag == enable)
         {
-            //rate = get_netstat(WIRED, HOST);
-            rate = 100;
+            rate = get_netstat(WIRED, HOST);
+            //rate = 100;
             if(rate < 0)
             {
                 log_error("Get \"%s\" network status failure!\n", WIRED);
@@ -390,7 +390,7 @@ void *thread_ping(void *args)
                 rate = get_netstat(WIFI, HOST);
                 if(rate == 0)
                 {
-                    //switch_network_add(WIFI, p_lock->metric);
+                    switch_network_add(WIFI, p_lock->metric);
 
                     p_lock->wwan0_flag = enable;
                 
