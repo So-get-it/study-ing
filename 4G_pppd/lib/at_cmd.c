@@ -200,30 +200,53 @@ int check_SIM_signal (int fd)
 
 
 
-int check_all_right (int fd)
+int check_all_right (int fd, int *status)
 {
-    if(check_serial_ready (fd) < 0)
-        return -1;
-    log_info("Serial port ready!\n");
+	switch(*status)
+	{
+		case AT_STATUS_INIT:
+    		if(check_serial_ready (fd) < 0)
+			{
+				break;
+			}
 
+    		log_info("Serial port ready!\n");
+			(*status)++;
 
-    if(check_SIM_normal (fd) < 0)
-        return -2;
-    log_info("SIM card can be detected!\n");
+		case SIM_STATUS_TTY_READY:
+    		if(check_SIM_normal (fd) < 0)
+			{
+				*status = AT_STATUS_INIT;
+				break;
+			}
 
+    		log_info("SIM card can be detected!\n");
+			(*status)++;
 
-    if(check_SIM_login (fd) < 0)
-        return -3;
-    log_info("SIM card is registered!\n");
+		case SIM_STATUS_SIM_READY:
+    		if(check_SIM_register (fd) < 0)
+			{
+				*status = AT_STATUS_INIT;
+				break;
+			}
 
+    		log_info("SIM card is registered!\n");
+			(*status)++;
 
-    if(check_SIM_signal (fd) < 0)
-        return -4;
-    log_info("SIM card's signal strength is good\n");
+		case SIM_STATUS_SIM_REGISTER:
+    		if(check_SIM_signal (fd) < 0)
+			{
+				*status = AT_STATUS_INIT;
+				break;
+			}
 
+    		log_info("SIM card's signal strength is good\n");
+			(*status)++;
 
-    log_info("-------SIM card all ready!\n");
-
+		case SIM_STATUS_SIM_SIGNAL:
+    		log_info("------SIM card all ready!\n");
+	}
+	log_debug("status: %d\n", *status);
     return 0;
 } 
 

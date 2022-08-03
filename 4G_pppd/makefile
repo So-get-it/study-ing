@@ -4,10 +4,7 @@ FNAME=4g_dial
 
 all: clean
 	gcc -W -Wall -I${LIBPATH} ${FNAME}.c -o ${FNAME} -L ${LIBPATH} -ldial-up -lxml2 -lpthread
-	./${FNAME} -f 0 -b 115200 -d 8 -p n -s 1 
-
-run:
-	./${FNAME} -f 0 -b 115200 -d 8 -p n -s 1 
+	./${FNAME} -d 
 
 clean:
 	rm -f ${FNAME}

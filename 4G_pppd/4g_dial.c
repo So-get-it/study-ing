@@ -41,21 +41,17 @@ int run_stop = 0;
 int main(int argc, char **argv)
 {
     int                 rv, ch;
-    //char                buf[1024] = {0};
+	int 				status = AT_STATUS_INIT;
     int                 loglevel = LOG_LEVEL_INFO;
-    int                 debug = 1;
+    int                 debug = 0;
     char                *logfile = "serial.log";
-    //char                send_msg[128];
-    //char                recv_msg[128];
     char                mcc[4] = {0};
     char                mnc[4] = {0};
     char                apn[16] = {0};
     char                netcard[32] = {0};
-    //fd_set              fdset;
     attr_t              attr;
     struct termios      oldtio;
     pthread_t           tid1;
-    //pthread_t           tid2;
     pthread_attr_t      thread_attr;
     p_lock_t            lock_ctx;
     
@@ -69,16 +65,18 @@ int main(int argc, char **argv)
 
     
     attr.fname = "/dev/ttyUSB3"; //如果未指定，使用该设备节点
+    attr.flow_ctrl = 0;
+    attr.baud_rate = 115200;
+    attr.data_bits = 8;
+    attr.parity = *("n");
+    attr.stop_bits = 1;
+            
     
     struct option    opts[] = {
-        {"help"    , no_argument      , NULL, 'h'},
-        {"flowctrl", required_argument, NULL, 'f'},
-        {"baudrate", required_argument, NULL, 'b'},
-        {"databits", required_argument, NULL, 'd'},
-        {"parity"  , required_argument, NULL, 'p'},
-        {"stopbits", required_argument, NULL, 's'},
-        {"name"    , required_argument, NULL, 'n'},
-        {NULL      , 0                , NULL,  0 }
+        {"help" , no_argument      , NULL, 'h'},
+        {"debug", no_argument      , NULL, 'd'},
+        {"name" , required_argument, NULL, 'n'},
+        {NULL   , 0                , NULL,  0 }
     };
 
     if(argc < 2)
@@ -88,7 +86,7 @@ int main(int argc, char **argv)
         return -1;
     }
 
-    while((ch = getopt_long(argc,argv,"hf:b:d:p:s:n:",opts,NULL)) != -1)
+    while((ch = getopt_long(argc,argv,"hdn:",opts,NULL)) != -1)
     {
         switch(ch)
         {
@@ -96,26 +94,10 @@ int main(int argc, char **argv)
                 usage();
                 return 0;
 
-            case 'f':
-                attr.flow_ctrl = atoi(optarg);
-                break;
-
-            case 'b':
-                attr.baud_rate = atoi(optarg);
-                break;
-
             case 'd':
-                attr.data_bits = atoi(optarg);
+				debug = 1;
                 break;
 
-            case 'p':
-                attr.parity = *optarg;
-                break;
-
-            case 's':
-                attr.stop_bits = atoi(optarg);
-                break;
-            
             case 'n':
                 attr.fname = optarg;
                 break;
@@ -136,16 +118,10 @@ int main(int argc, char **argv)
     }
 
 
-    if((attr.fd = serial_open(attr.fname)) < 0)
+    if(serial_open(&attr, &oldtio) < 0)
     {
         log_error("Open %s failure: %s\n", attr.fname, strerror(errno));
         return -2;
-    }
-
-
-    if(serial_init(&attr, &oldtio) < 0)
-    {
-        return -3;
     }
 
 
@@ -203,11 +179,14 @@ int main(int argc, char **argv)
             if(access(netcard, F_OK))     //ppp0 not exist
             {
                 /* Check AT command is available and the SIM card is normal */
-                rv = check_all_right(attr.fd);
+				log_info("%s not exist and will dialing up!", DIAL);
+				log_debug("AT STATUS before: %d\n", status);
+                rv = check_all_right(attr.fd, &status);
                 if(rv < 0)
                 {
                     log_error("check_all_right() check something error!!!");
                 }
+				log_debug("AT STATUS after: %d\n", status);
 
 
                 /*----------- Set the APN------------ */
@@ -215,6 +194,7 @@ int main(int argc, char **argv)
                 rv = get_mcc_mnc(attr.fd, mcc, mnc);
                 if(rv < 0)
                 {
+					status = AT_STATUS_INIT;
                     log_error("get_mcc_mnc() failure!!!");
                 }
 
@@ -232,6 +212,7 @@ int main(int argc, char **argv)
                 rv = set_apn(attr.fd, apn);
                 if(rv < 0)
                 {
+					status = AT_STATUS_INIT;
                     log_error("set_apn failure!!!");
                 }
 
@@ -243,6 +224,10 @@ int main(int argc, char **argv)
 				sleep(3);
 
             }
+			else
+			{
+				log_info("%s exist and will switch the network!", DIAL);
+			}
             /* ppp0 exist or pppd success*/
 
             //switch_network_add(DIAL, lock_ctx.metric);
@@ -277,7 +262,7 @@ int main(int argc, char **argv)
 void *thread_kill(void *args)
 {
     //int   rate, rv;
-    char                pid_s[16] = {0};
+    //char                pid_s[8] = {0};
 
     p_lock_t *k_lock = (p_lock_t *)args;
 
@@ -317,8 +302,8 @@ void *thread_kill(void *args)
                         k_lock->eth0_flag = enable;
                     }
 
-                    get_pid(DIAL, pid_s);
-                    kill_process(DIAL);
+                    //get_pid("pppd", pid_s);
+                    kill_process("pppd");
                 }
             }
 
@@ -442,20 +427,10 @@ void sig_stop(int signum)
 }
 
 
-void adjust_buf(char *buf)
-{
-    int i = strlen(buf);
-    strcpy(&buf[i-1],"\r");
-}
-
 
 void usage()
 {
-    log_info("-h(--help    ): aply the usage of this file\n");
-    log_info("-f(--flowctrl): arguments: 0(no use) or 1(hard) or 2(soft)\n");
-    log_info("-b(--baudrate): arguments with speed number\n");
-    log_info("-d(--databits): arguments: 5 or 6 or 7 or 8 bits\n");
-    log_info("-p(--parity  ): arguments: n/N(null) e/E(even) o/O(odd) s/S(space)\n");
-    log_info("-s(--stopbits): arguments: 1 or 2 stopbits\n");
-    log_info("-n(--serial  ): arguments: the name of serial port\n");
+    log_info("-h(--help ): aply the usage of this file\n");
+    log_info("-d(--debug): no arguments: debug or not\n");
+    log_info("-n(--name ): arguments: the name of serial port\n");
 }

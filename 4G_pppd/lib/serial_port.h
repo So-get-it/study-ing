@@ -37,10 +37,15 @@ typedef struct attr_s{
 	int 		stop_bits;			//停止位
 }attr_t;
 
-extern int serial_open(char *fname);
+extern int serial_open(attr_t *attr, struct termios *oldtermios);
+
+
 extern int serial_close(int fd, struct termios *termios_p);
-extern int serial_init(attr_t *attr, struct termios *oldtermios);
+
+
 extern int serial_send(int fd, char *msg, int msg_len);
+
+
 extern int serial_recv(int fd, char *recv_msg, int size);
 
 #endif

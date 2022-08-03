@@ -21,6 +21,16 @@
 #include "serial_port.h"
 
 
+enum sim_stat
+{
+	AT_STATUS_INIT,
+	SIM_STATUS_TTY_READY,
+	SIM_STATUS_SIM_READY,
+	SIM_STATUS_SIM_REGISTER,
+	SIM_STATUS_SIM_SIGNAL,
+	SIM_STATUS_ALL_READY = SIM_STATUS_SIM_SIGNAL
+};
+
 
 #ifndef _AT_CMD_H_
 #define _AT_CMD_H_
@@ -34,11 +44,11 @@ extern int check_serial_ready (int fd);
 
 extern int check_SIM_normal (int fd);
 
-extern int check_SIM_login (int fd);
+extern int check_SIM_register (int fd);
 
 extern int check_SIM_signal (int fd);
 
-extern int check_all_right (int fd);
+extern int check_all_right (int fd, int *status);
 
 extern int get_mcc_mnc (int fd, char *mcc, char *mnc);
 

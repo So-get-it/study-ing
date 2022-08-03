@@ -15,25 +15,28 @@
 #include "logger.h"
 
 
-int serial_open(char *fname)
+int serial_open(attr_t *attr, struct termios *oldtermios)
 {
-    int fd, rv;
+    int 				fd, rv;
+    char                baudrate[32] = {0};
+    struct termios      newtermios;
 
-    if(NULL == fname)
+
+    if(!attr)
     {
         log_error("%s,Invalid parameter\n",__func__);
         return -1;
     }
 
-    if((fd = open(fname,O_RDWR|O_NOCTTY|O_NDELAY)) < 0)
+    if((attr->fd = open(attr->fname,O_RDWR|O_NOCTTY|O_NDELAY)) < 0)
     {
-        log_error("Open %s failed: %s\n",fname, strerror(errno));
+        log_error("Open %s failed: %s\n",attr->fname, strerror(errno));
 
         return -1;
     }
 
     /* 判断串口的状态是否处于阻塞态 */
-    if((rv = fcntl(fd, F_SETFL, 0)) < 0)
+    if((rv = fcntl(attr->fd, F_SETFL, 0)) < 0)
     {
         log_error("fcntl failed!\n");
 
@@ -41,44 +44,13 @@ int serial_open(char *fname)
     }
     
     /* 是否为终端设备 */
-    if(0 == isatty(fd))  
+    if(0 == isatty(attr->fd))  
     {
-        log_error("%s:[%d] is not a Terminal equipment.\n", fname, fd);
+        log_error("%s:[%d] is not a Terminal equipment.\n", attr->fname, attr->fd);
         return -3;
     }
     
-    log_info("Open %s successfully!\n", fname);
-
-    return fd;
-} 
-
-
-int serial_close (int fd, struct termios *termios_p)
-{
-    /* 清空串口通信的缓冲区 */
-    if(tcflush(fd,TCIOFLUSH))
-    {
-        log_error("%s, tcflush() fail: %s\n", __func__, strerror(errno));
-        return -1;
-    }
-
-    /* 将串口设置为原有属性, 立即生效 */
-    if(tcsetattr(fd,TCSANOW,termios_p))
-    {
-        log_error("%s, set old options fail: %s\n",__func__,strerror(errno));
-        return -2;
-    }
-
-    close(fd);
-    log_info("close OK..............\n");
-
-    return 0;
-} 
-
-int serial_init(attr_t *attr, struct termios *oldtermios)
-{
-    char                  baudrate[32] = {0};
-    struct termios        newtermios;
+    log_info("Open %s successfully!\n", attr->fname);
 
     memset(&newtermios,0,sizeof(struct termios));
     memset(oldtermios,0,sizeof(struct termios));
@@ -281,6 +253,31 @@ int serial_init(attr_t *attr, struct termios *oldtermios)
 
     return 0;
 } 
+
+
+int serial_close (int fd, struct termios *termios_p)
+{
+    /* 清空串口通信的缓冲区 */
+    if(tcflush(fd,TCIOFLUSH))
+    {
+        log_error("%s, tcflush() fail: %s\n", __func__, strerror(errno));
+        return -1;
+    }
+
+    /* 将串口设置为原有属性, 立即生效 */
+    if(tcsetattr(fd,TCSANOW,termios_p))
+    {
+        log_error("%s, set old options fail: %s\n",__func__,strerror(errno));
+        return -2;
+    }
+
+    close(fd);
+    log_info("close OK..............\n");
+
+    return 0;
+} 
+
+//int serial_init(attr_t *attr, struct termios *oldtermios)
 
 int serial_send (int fd, char *msg, int msg_len)
 {
