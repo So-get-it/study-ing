@@ -96,6 +96,16 @@ int kill_process (const char *procs)
 
 
 
+/* 
+ * =====================================================================================
+ *         Name:  git_pid
+ *  Description:  Find the process number of the process associated with the parameter.
+ *   Input args:  procs: The string associated with the process
+ *  Output args:  pid_c: To save the PID number by string.
+ * return value:  0    success
+ *                -1   failure
+ * =====================================================================================
+ */
 int get_pid (const char *procs, char *pid_c)
 {
     int             retval, count = 0;

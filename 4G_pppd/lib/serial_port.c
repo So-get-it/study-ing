@@ -15,6 +15,15 @@
 #include "logger.h"
 
 
+/* 
+ * =====================================================================================
+ *         Name:  serial_open
+ *  Description:  To open a serial port and initialize it.
+ *   Input args:  attr: Attribute of the serial Port
+ *  Output args:  oldtermios: to save the serial Port original configuration
+ * return value:  <0 failure   =0  success
+ * =====================================================================================
+ */
 int serial_open(attr_t *attr, struct termios *oldtermios)
 {
     int 				fd, rv;
@@ -255,6 +264,16 @@ int serial_open(attr_t *attr, struct termios *oldtermios)
 } 
 
 
+/* 
+ * =====================================================================================
+ *         Name:  serial_close
+ *  Description:  To restored the original serial port configuration and close it.
+ *   Input args:  fd: the file descriptor for the serial port.
+ *                termios_p: the original configuration
+ *  Output args:
+ * return value:  <0 failure  ==0 success
+ * =====================================================================================
+ */
 int serial_close (int fd, struct termios *termios_p)
 {
     /* 清空串口通信的缓冲区 */
@@ -277,8 +296,20 @@ int serial_close (int fd, struct termios *termios_p)
     return 0;
 } 
 
+
 //int serial_init(attr_t *attr, struct termios *oldtermios)
 
+
+/* 
+ * =====================================================================================
+ *         Name:  serial_send
+ *  Description:  Send the message to the serial port.
+ *   Input args:  fd: the file descriptor for the serial port.
+ *                msg: string what you want to send
+ *                strlen: the string's length
+ * return value:  <0 failure  >0 success
+ * =====================================================================================
+ */
 int serial_send (int fd, char *msg, int msg_len)
 {
     int rv = 0;
@@ -299,6 +330,17 @@ int serial_send (int fd, char *msg, int msg_len)
     return rv;
 } 
 
+
+/* 
+ * =====================================================================================
+ *         Name:  serial_recv
+ *  Description:  To receive the message from the serial port.
+ *   Input args:  fd: the file descriptor for the serial port.
+ *                size: the Output arg's size
+ *  Output args:  to save the message Received
+ * return value:  rv: how mang bytes of data received
+ * =====================================================================================
+ */
 int serial_recv(int fd, char *buf, int size)
 {
     int                 len, rv;

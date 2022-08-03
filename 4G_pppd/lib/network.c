@@ -237,6 +237,15 @@ int check_netcard_exist (char *netname)
 
 
 
+/* 
+ * =====================================================================================
+ *         Name:  get_min_metric
+ *  Description:  To get a metric number which less than wired network's metric.
+ *   Input args:
+ *  Output args:  min_metric: To save metric.
+ * return value:  <0 failure   =0 success
+ * =====================================================================================
+ */
 int get_min_metric (int *min_metric)
 {
     int         got_metric;
@@ -301,6 +310,16 @@ int get_min_metric (int *min_metric)
 
 
 
+/* 
+ * =====================================================================================
+ *         Name:  switch_network_add
+ *  Description:  Execute a command to add a new route surfing the Internet.
+ *   Input args:  netname: which network card you want to add
+ *                metric: Add the route taking the given metric value
+ *  Output args:
+ * return value:
+ * =====================================================================================
+ */
 int switch_network_add (char *netname, int metric)
 {
     char        buf[128] = {0};
@@ -315,6 +334,16 @@ int switch_network_add (char *netname, int metric)
 
 
 
+/* 
+ * =====================================================================================
+ *         Name:  switch_network_del
+ *  Description:  Execute a command to delete a route what you add.
+ *   Input args:  netname: which network card you want to delete
+ *                metric: Delete the route taking the given metric value
+ *  Output args:
+ * return value:
+ * =====================================================================================
+ */
 int switch_network_del (char *netname, int metric)
 {
     char        buf[128] = {0};
@@ -329,7 +358,7 @@ int switch_network_del (char *netname, int metric)
 
 
 
-
+/* no used */
 int get_working_netname (char *netname, int size, int metric)
 {
     FILE        *fp;

@@ -24,13 +24,13 @@
  *         Name:  send_at_cmd
  *  Description:  Send the AT command and determine whether the received message meets expectations.
  *   Input args:  
- *              fd: File descriptor for serial files
- *              at_cmd: AT command string
- *              expect_recv: The message what you expect to receive.
- *              msgsize: the size of the receive buffer
+ *                fd: File descriptor for serial files
+ *                at_cmd: AT command string
+ *                expect_recv: The message what you expect to receive.
+ *                msgsize: the size of the receive buffer
  *
  *  Output args:
- *              recv_msg: A memory space to memory received message
+ *                recv_msg: A memory space to memory received message
  *
  * return value:  <0    failure
  *                =0    success
@@ -40,8 +40,6 @@ int send_at_cmd (int fd, char *at_cmd, const char *expect_recv, char *recv_msg, 
 {
     int rv;
     
-
-
 
     if(!at_cmd || !expect_recv)
     {
@@ -80,13 +78,22 @@ int send_at_cmd (int fd, char *at_cmd, const char *expect_recv, char *recv_msg, 
 
 
 
+/* 
+ * =====================================================================================
+ *         Name:  check_serial_ready
+ *  Description:  Send an AT command to check Serial Port is OK.
+ *   Input args:  fd: File descriptor for serial files
+ *  Output args:
+ * return value:  <0 failure     =0 success
+ * =====================================================================================
+ */
 int check_serial_ready (int fd)
 {
     int     retval;
     char    msg[32] = {0};
 
-    retval = send_at_cmd(fd, "AT\r", "OK", msg, sizeof(msg));
 
+    retval = send_at_cmd(fd, "AT\r", "OK", msg, sizeof(msg));
 
     if(retval < 0)
     {
@@ -95,11 +102,20 @@ int check_serial_ready (int fd)
         return retval;
     }
 
-    return retval;
+    return 0;
 } 
 
 
 
+/* 
+ * =====================================================================================
+ *         Name:  check_SIM_normal
+ *  Description:  Send an AT command to check SIM card is detected.
+ *   Input args:  fd: File descriptor for serial files
+ *  Output args:
+ * return value:  <0 failure     =0 success
+ * =====================================================================================
+ */
 int check_SIM_normal (int fd)
 {
     int     retval;
@@ -120,6 +136,15 @@ int check_SIM_normal (int fd)
 
 
 
+/* 
+ * =====================================================================================
+ *         Name:  check_SIM_register
+ *  Description:  Send an AT command to check SIM card is registered.
+ *   Input args:  fd: File descriptor for serial files
+ *  Output args:
+ * return value:  <0 failure     =0 success
+ * =====================================================================================
+ */
 int check_SIM_register (int fd)
 {
     int         retval;
@@ -149,6 +174,15 @@ int check_SIM_register (int fd)
 }
 
 
+/* 
+ * =====================================================================================
+ *         Name:  check_SIM_signal
+ *  Description:  Send an AT command to check SIM card's signal strength is well or not.
+ *   Input args:  fd: File descriptor for serial files
+ *  Output args:
+ * return value:  <0 failure     =0 success
+ * =====================================================================================
+ */
 int check_SIM_signal (int fd)
 {
     int             retval, signal_strength;
@@ -200,6 +234,16 @@ int check_SIM_signal (int fd)
 
 
 
+/* 
+ * =====================================================================================
+ *         Name:  check_all_right
+ *  Description:  Integration of the function about check SIM status.
+ *   Input args:  fd: File descriptor for serial files
+ *                status: save which status is
+ *  Output args:
+ * return value:  <0 failure     =0 success
+ * =====================================================================================
+ */
 int check_all_right (int fd, int *status)
 {
 	switch(*status)
@@ -207,7 +251,7 @@ int check_all_right (int fd, int *status)
 		case AT_STATUS_INIT:
     		if(check_serial_ready (fd) < 0)
 			{
-				break;
+				return -1;
 			}
 
     		log_info("Serial port ready!\n");
@@ -217,7 +261,7 @@ int check_all_right (int fd, int *status)
     		if(check_SIM_normal (fd) < 0)
 			{
 				*status = AT_STATUS_INIT;
-				break;
+				return -1;
 			}
 
     		log_info("SIM card can be detected!\n");
@@ -227,7 +271,7 @@ int check_all_right (int fd, int *status)
     		if(check_SIM_register (fd) < 0)
 			{
 				*status = AT_STATUS_INIT;
-				break;
+				return -1;
 			}
 
     		log_info("SIM card is registered!\n");
@@ -237,7 +281,7 @@ int check_all_right (int fd, int *status)
     		if(check_SIM_signal (fd) < 0)
 			{
 				*status = AT_STATUS_INIT;
-				break;
+				return -1;
 			}
 
     		log_info("SIM card's signal strength is good\n");
