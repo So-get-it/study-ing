@@ -6,5 +6,9 @@ all: clean
 	gcc -W -Wall -I${LIBPATH} ${FNAME}.c -o ${FNAME} -L ${LIBPATH} -ldial-up -lxml2 -lpthread
 	./${FNAME} -d 
 
+gcc:
+	gcc -W -Wall -I${LIBPATH} ${FNAME}.c -o ${FNAME} -L ${LIBPATH} -ldial-up -lxml2 -lpthread
+
+
 clean:
 	rm -f ${FNAME}

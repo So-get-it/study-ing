@@ -273,63 +273,68 @@ void *thread_kill(void *args)
         log_debug("%s get lock and start running...\n", __func__);
 
 
-        if(disable == k_lock->pppd_enabled)
+        if(enable == k_lock->pppd_enabled)
         {
-            /* wwan0 or ppp0 working */
-            if(!k_lock->eth0_flag)
-            {
-                if(get_netstat(WIRED, HOST) == 0)
-                {
-                    log_info("\"%s\" in good condition NOW!\n ", WIRED);
-
-                    if(k_lock->ppp0_flag)   //if ppp0 is working
-                    {
-                        switch_network_del(DIAL, k_lock->metric);
-
-                        log_info("%s stop working...\n", DIAL);
-
-                        k_lock->ppp0_flag = disable;
-                        k_lock->eth0_flag = enable;
-                    }
-
-                    if(k_lock->wwan0_flag)  //if wwan0 is working
-                    {
-                        switch_network_del(WIFI, k_lock->metric);
-
-                        log_info("%s stop working...\n", WIFI);
-
-                        k_lock->wwan0_flag = disable;
-                        k_lock->eth0_flag = enable;
-                    }
-
-                    //get_pid("pppd", pid_s);
-                    kill_process("pppd");
-                }
-            }
+        	pthread_mutex_unlock(&k_lock->lock);
+			usleep(500);
+			continue;
+		}
 
 
-            /* ppp0 is working and eth0 isn't in good condition*/
-            if(!k_lock->eth0_flag || !k_lock->wwan0_flag)
-            {
-                if(get_netstat(WIFI, HOST) == 0)
-                {
-                    log_info("\"%s\" in good condition NOW!\n", WIFI);
+		/* wwan0 or ppp0 working */
+		if(!k_lock->eth0_flag)
+		{
+			/* wired network in good condition */
+			if(get_netstat(WIRED, HOST) == 0)
+			{
+				log_info("\"%s\" in good condition NOW!\n ", WIRED);
 
-                    switch_network_del(DIAL, k_lock->metric);
-                    switch_network_add(WIFI, k_lock->metric);
+				if(k_lock->ppp0_flag)   //if ppp0 is working
+				{
+					switch_network_del(DIAL, k_lock->metric);
 
-                    k_lock->ppp0_flag = disable;
-                    k_lock->wwan0_flag = enable;
+					log_info("%s stop working and %s start working...\n", DIAL, WIRED);
 
-                    log_info("%s stop working...\n", DIAL);
-                }
-            }
-			sleep(3);
-        }
+					k_lock->ppp0_flag = disable;
+					
+					kill_process("pppd");
+				}
+
+				if(k_lock->wwan0_flag)  //if wwan0 is working
+				{
+					switch_network_del(WIFI, k_lock->metric);
+
+					log_info("%s stop working and %s start working...\n", WIFI, WIRED);
+
+					k_lock->wwan0_flag = disable;
+				}
+
+				k_lock->eth0_flag = enable;
+			}
+		}
+
+
+		/* ppp0 is working and eth0 isn't in good condition*/
+		if(!k_lock->eth0_flag && !k_lock->wwan0_flag)
+		{
+			if(get_netstat(WIFI, HOST) == 0)
+			{
+				log_info("\"%s\" in good condition NOW!\n", WIFI);
+
+				switch_network_del(DIAL, k_lock->metric);
+				switch_network_add(WIFI, k_lock->metric);
+
+				k_lock->ppp0_flag = disable;
+				k_lock->wwan0_flag = enable;
+
+				log_info("%s stop working and %s start working...\n", DIAL, WIFI);
+			}
+		}
+
         pthread_mutex_unlock(&k_lock->lock);
         log_debug("%s get UNLOCK and stop running...\n", __func__);
 
-        usleep(1000);
+        usleep(500);
     }
 
     pthread_exit(NULL);
@@ -411,7 +416,7 @@ void *thread_ping(void *args)
         pthread_mutex_unlock(&p_lock->lock);
         log_debug("%s get UNLOCK and stop running...\n", __func__);
         
-        sleep(3);
+        sleep(1);
     }
 
     pthread_exit(NULL);
