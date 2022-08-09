@@ -2,12 +2,12 @@
  *      Copyright:  (C) 2022 Chen Zhenyu<2472734278@qq.com>
  *                  All rights reserved.
  *
- *       Filename:  kill_process.h
+ *       Filename:  network.h
  *    Description:  This file is related to network.
  *
  *        Version:  1.0.0(15/07/22)
  *         Author:  Chen Zhenyu <2472734278@qq.com>
- *      ChangeLog:  1, Release initial version on "15/07/22 22:05:34"
+ *      ChangeLog:  1, Release initial version on "15/07/22 17:07:16"
  *
  ********************************************************************************/
 
@@ -19,18 +19,24 @@
 #include <ctype.h>
 #include <sys/stat.h>
 #include <fcntl.h>
-#include <signal.h>
 #include <unistd.h>
 
 
-
-#ifndef _GET_PID_H_
-#define _GET_PID_H_
-
-extern int kill_process (const char *procs);
+#ifndef _GET_NETSTAT_H_
+#define _GET_NETSTAT_H_
 
 
-extern int get_pid (const char *procs, char *msg);
+#define LOG_NAME ".netstat.log"
 
+extern int get_netstat(char *netname, char *hostname);
 
+extern int check_netcard_exist(char *netname);
+
+extern int get_min_metric (int *min_metric);
+
+extern int switch_network_add (char *netname, int metric);
+
+extern int switch_network_del (char *netname, int metric);
+
+extern int get_working_netname (char *netname, int size, int metric);
 #endif

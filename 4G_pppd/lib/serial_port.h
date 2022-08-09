@@ -1,3 +1,15 @@
+/*********************************************************************************
+ *      Copyright:  (C) 2022 Chen Zhenyu<2472734278@qq.com>
+ *                  All rights reserved.
+ *
+ *       Filename:  serial_port.h
+ *    Description:  This file is related to serial port.
+ *
+ *        Version:  1.0.0(05/07/22)
+ *         Author:  Chen Zhenyu <2472734278@qq.com>
+ *      ChangeLog:  1, Release initial version on "05/07/22 14:44:13"
+ *
+ ********************************************************************************/
 
 #include <stdio.h>
 #include <unistd.h>
@@ -25,10 +37,15 @@ typedef struct attr_s{
 	int 		stop_bits;			//停止位
 }attr_t;
 
-extern int serial_open(char *fname);
+extern int serial_open(attr_t *attr, struct termios *oldtermios);
+
+
 extern int serial_close(int fd, struct termios *termios_p);
-extern int serial_init(attr_t *attr, struct termios *oldtermios);
+
+
 extern int serial_send(int fd, char *msg, int msg_len);
+
+
 extern int serial_recv(int fd, char *recv_msg, int size);
 
 #endif

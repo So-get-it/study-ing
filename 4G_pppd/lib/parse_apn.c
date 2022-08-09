@@ -1,3 +1,15 @@
+/*********************************************************************************
+ *      Copyright:  (C) 2022 Chen Zhenyu<2472734278@qq.com>
+ *                  All rights reserved.
+ *
+ *       Filename:  parse_apn.c
+ *    Description:  This file is the function to parse APN.
+ *
+ *        Version:  1.0.0(13/07/22)
+ *         Author:  Chen Zhenyu <2472734278@qq.com>
+ *      ChangeLog:  1, Release initial version on "13/07/22 22:17:57"
+ *
+ ********************************************************************************/
 
 //#define LIBXML_STATIC
 
@@ -13,14 +25,14 @@
  
 int parse_apn(const char *file_name, char *qmcc, char *qmnc, char *qapn)
 {
-    xmlDocPtr 		doc;        /* xml document tree */
-    xmlNodePtr 		cur;       /* xml node */
-    xmlChar 		*mcc;         /* Operator MCC */
-    xmlChar 		*mnc;         /* Operator MNC */
-    xmlChar 		*apn;         /* pppd APN */
-    //char    		*qmcc = "460";
-    //char    		*qmnc = "03";
-    int      		found = 0;
+    xmlDocPtr       doc;        /* xml document tree */
+    xmlNodePtr      cur;       /* xml node */
+    xmlChar         *mcc;         /* Operator MCC */
+    xmlChar         *mnc;         /* Operator MNC */
+    xmlChar         *apn;         /* pppd APN */
+    //char          *qmcc = "460";
+    //char          *qmnc = "03";
+    int             found = 0;
  
     if( !file_name )
     {
@@ -68,21 +80,21 @@ int parse_apn(const char *file_name, char *qmcc, char *qmnc, char *qapn)
                 apn = xmlGetProp(cur, "apn");
                 //uid = xmlGetProp(cur, "user");
                 //pwd = xmlGetProp(cur, "password");
-				
-				if(!strstr(apn, "wap") && apn)		//wap上网是早期的，排除不要
-				{
-                	//printf("mcc:%s mnc:%s apn:%s\n",mcc, mnc, apn);
-
-					strncpy(qapn, apn, strlen(apn));
-					found = 1;
-				}
                 
-				/*
-				if( !xmlStrstr(apn, "wap") )
+                if(!strstr(apn, "wap") && apn)      //wap上网是早期的，排除不要
+                {
+                    //printf("mcc:%s mnc:%s apn:%s\n",mcc, mnc, apn);
+
+                    strncpy(qapn, apn, strlen(apn));
+                    found = 1;
+                }
+                
+                /*
+                if( !xmlStrstr(apn, "wap") )
                 {
                     found = 1;
                 }
-				*/
+                */
             }
         }
         cur = cur->next;

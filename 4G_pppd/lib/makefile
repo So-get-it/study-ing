@@ -1,4 +1,4 @@
-LIBNAME=serial
+LIBNAME=dial-up
 LIB_PATH=/usr/local/include/libxml2/
 INSTPATH=`pwd`/
 
